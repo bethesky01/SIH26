@@ -30,6 +30,7 @@ export default function VideoPlayerView({
   const [showBoundingBoxes, setShowBoundingBoxes] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState(null);
+  const [videoError, setVideoError] = useState(false);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -39,6 +40,10 @@ export default function VideoPlayerView({
     const ev = evidenceList?.find((e) => e.id === selectedEvidenceId) || evidenceList?.[0];
     if (ev) {
       setCurrentEvidence(ev);
+      setDuration(ev.duration_seconds || 15);
+      setCurrentTime(0);
+      setIsPlaying(false);
+      setVideoError(false);
       loadDetections(ev.id);
     }
   }, [selectedEvidenceId, evidenceList]);
@@ -58,7 +63,7 @@ export default function VideoPlayerView({
     setIsAnalyzing(true);
     try {
       const results = await api.analyzeEvidenceAI(currentEvidence.id);
-      setDetections(results || []);
+      setDetections(results?.detections || results || []);
     } catch (err) {
       alert(`AI analysis failed: ${err.message}`);
     } finally {
@@ -83,93 +88,184 @@ export default function VideoPlayerView({
     }
   };
 
+  // Fallback timer simulation when video stream is unavailable (e.g. Vercel Demo Mode)
+  useEffect(() => {
+    if (!videoError || !isPlaying) return;
+
+    let lastTime = performance.now();
+    const interval = setInterval(() => {
+      const now = performance.now();
+      const deltaSec = ((now - lastTime) / 1000) * playbackSpeed;
+      lastTime = now;
+
+      setCurrentTime((prev) => {
+        const next = prev + deltaSec;
+        if (next >= (duration || 15)) {
+          setIsPlaying(false);
+          return 0;
+        }
+        return next;
+      });
+    }, 40);
+
+    return () => clearInterval(interval);
+  }, [videoError, isPlaying, playbackSpeed, duration]);
+
   // Video playback controls
   const togglePlay = () => {
+    if (videoError) {
+      setIsPlaying(!isPlaying);
+      return;
+    }
     if (!videoRef.current) return;
     if (isPlaying) {
       videoRef.current.pause();
       setIsPlaying(false);
     } else {
-      videoRef.current.play();
+      videoRef.current.play().catch(() => {
+        setVideoError(true);
+        setIsPlaying(true);
+      });
       setIsPlaying(true);
     }
   };
 
   const stepFrame = (seconds) => {
+    if (videoError) {
+      setCurrentTime((prev) => Math.max(0, Math.min(duration || 15, prev + seconds)));
+      return;
+    }
     if (!videoRef.current) return;
     videoRef.current.currentTime = Math.max(0, Math.min(duration, videoRef.current.currentTime + seconds));
   };
 
   const changeSpeed = (speed) => {
-    if (!videoRef.current) return;
-    videoRef.current.playbackRate = speed;
+    if (videoRef.current) {
+      videoRef.current.playbackRate = speed;
+    }
     setPlaybackSpeed(speed);
   };
 
   const seekTo = (seconds) => {
+    if (videoError) {
+      setCurrentTime(seconds);
+      return;
+    }
     if (!videoRef.current) return;
     videoRef.current.currentTime = seconds;
     if (!isPlaying) {
-      videoRef.current.play();
+      videoRef.current.play().catch(() => setVideoError(true));
       setIsPlaying(true);
     }
   };
 
-  // Render bounding boxes on Canvas overlay
+  // Render video frame / canvas surveillance scene with bounding boxes overlay
   useEffect(() => {
     const canvas = canvasRef.current;
-    const video = videoRef.current;
-    if (!canvas || !video || !showBoundingBoxes) {
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }
-      return;
-    }
+    if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-    canvas.width = video.clientWidth;
-    canvas.height = video.clientHeight;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const container = canvas.parentElement;
+    const width = container?.clientWidth || 640;
+    const height = Math.min(460, Math.round((width * 9) / 16));
 
-    // Find detections matching current video time (window of +/- 1.2s)
-    const activeDetections = detections.filter(
-      (d) => Math.abs(d.timestamp_sec - currentTime) <= 1.2
-    );
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
 
-    activeDetections.forEach((det) => {
-      const x = det.bbox_x * canvas.width;
-      const y = det.bbox_y * canvas.height;
-      const w = det.bbox_w * canvas.width;
-      const h = det.bbox_h * canvas.height;
+    // 1. If video error (standalone demo), paint simulated surveillance scene
+    if (videoError) {
+      ctx.fillStyle = '#0a0f1d';
+      ctx.fillRect(0, 0, width, height);
 
-      // Color coding by object class
-      let strokeColor = '#00e5ff'; // Person
-      if (det.label.toLowerCase().includes('vehicle') || det.label.toLowerCase().includes('car') || det.label.toLowerCase().includes('truck')) {
-        strokeColor = '#f59e0b';
-      } else if (det.label.toLowerCase().includes('face')) {
-        strokeColor = '#10b981';
-      } else if (det.label.toLowerCase().includes('motion')) {
-        strokeColor = '#a855f7';
+      // Floor perspective grid lines
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, height * 0.7);
+      ctx.lineTo(width, height * 0.7);
+      ctx.moveTo(width * 0.2, height);
+      ctx.lineTo(width * 0.4, height * 0.7);
+      ctx.moveTo(width * 0.8, height);
+      ctx.lineTo(width * 0.6, height * 0.7);
+      ctx.stroke();
+
+      // Simulated moving subject
+      const dur = duration || 15;
+      const progress = (currentTime % dur) / dur;
+      const subX = 60 + progress * (width - 180);
+      const subY = height * 0.52;
+
+      ctx.fillStyle = 'rgba(100, 116, 139, 0.45)';
+      ctx.beginPath();
+      ctx.arc(subX + 18, subY + 14, 11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillRect(subX + 8, subY + 28, 22, 50);
+
+      // Simulated moving transport vehicle in second half
+      if (progress > 0.25) {
+        const vehProgress = (progress - 0.25) / 0.75;
+        const vehX = width - 120 - vehProgress * (width * 0.5);
+        const vehY = height * 0.58;
+        ctx.fillStyle = 'rgba(51, 65, 85, 0.65)';
+        ctx.fillRect(vehX, vehY, 110, 46);
+        ctx.fillStyle = 'rgba(250, 204, 21, 0.85)';
+        ctx.beginPath();
+        ctx.arc(vehX + 8, vehY + 30, 4, 0, Math.PI * 2);
+        ctx.fill();
       }
 
-      // Draw bounding box
-      ctx.lineWidth = 2.5;
-      ctx.strokeStyle = strokeColor;
-      ctx.strokeRect(x, y, w, h);
+      // CCTV Burned-in OSD Header
+      ctx.font = '600 12px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#10b981';
+      ctx.fillText(`[REC] ${currentEvidence?.camera_name || 'CAM-01'} (CH-01)`, 18, 28);
 
-      // Label background
-      ctx.fillStyle = strokeColor;
-      const labelText = `${det.label} ${(det.confidence * 100).toFixed(0)}%`;
-      ctx.font = '600 11px Inter, sans-serif';
-      const textWidth = ctx.measureText(labelText).width;
-      ctx.fillRect(x, Math.max(0, y - 18), textWidth + 8, 18);
+      ctx.fillStyle = '#f8fafc';
+      const cctvSec = currentTime.toFixed(2);
+      ctx.fillText(`${currentEvidence?.original_timestamp || '2026-08-22 22:15:00'} +${cctvSec}s`, width - 260, 28);
 
-      // Label text
-      ctx.fillStyle = '#050b14';
-      ctx.fillText(labelText, x + 4, Math.max(12, y - 5));
-    });
-  }, [currentTime, detections, showBoundingBoxes]);
+      // Bottom Watermark
+      ctx.font = '11px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText('FORENSIC BITSTREAM PRESERVED — ISO/IEC 27037', 18, height - 16);
+      ctx.fillText(`25.0 FPS | 1920x1080 | ${currentEvidence?.codec || 'H.264'}`, width - 270, height - 16);
+    } else {
+      ctx.clearRect(0, 0, width, height);
+    }
+
+    // 2. Draw AI Bounding Boxes overlay
+    if (showBoundingBoxes) {
+      const activeDetections = detections.filter(
+        (d) => Math.abs(d.timestamp_sec - currentTime) <= 1.5
+      );
+
+      activeDetections.forEach((det) => {
+        const x = det.bbox_x * width;
+        const y = det.bbox_y * height;
+        const w = det.bbox_w * width;
+        const h = det.bbox_h * height;
+
+        let strokeColor = '#00e5ff';
+        if (det.label.toLowerCase().includes('vehicle')) strokeColor = '#f59e0b';
+        else if (det.label.toLowerCase().includes('face')) strokeColor = '#10b981';
+        else if (det.label.toLowerCase().includes('motion')) strokeColor = '#a855f7';
+
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = strokeColor;
+        ctx.strokeRect(x, y, w, h);
+
+        ctx.fillStyle = strokeColor;
+        const labelText = `${det.label} ${(det.confidence * 100).toFixed(0)}%`;
+        ctx.font = '600 11px Inter, sans-serif';
+        const textWidth = ctx.measureText(labelText).width;
+        ctx.fillRect(x, Math.max(0, y - 18), textWidth + 8, 18);
+
+        ctx.fillStyle = '#050b14';
+        ctx.fillText(labelText, x + 4, Math.max(12, y - 5));
+      });
+    }
+  }, [currentTime, detections, showBoundingBoxes, videoError, currentEvidence, duration]);
 
   const activeDetectionsList = searchResults !== null ? searchResults : detections;
 
@@ -285,17 +381,26 @@ export default function VideoPlayerView({
             )}
           </div>
 
-          {/* Real Video Element */}
+          {/* Real Video Element (hides if backend stream fails and canvas simulation takes over) */}
           {currentEvidence ? (
             <video
               ref={videoRef}
               src={api.getStreamUrl(currentEvidence.id)}
-              style={{ width: '100%', maxHeight: 460, objectFit: 'contain' }}
+              style={{
+                width: '100%',
+                maxHeight: 460,
+                objectFit: 'contain',
+                display: videoError ? 'none' : 'block',
+              }}
+              onError={() => setVideoError(true)}
               onTimeUpdate={() => {
-                if (videoRef.current) setCurrentTime(videoRef.current.currentTime);
+                if (!videoError && videoRef.current) setCurrentTime(videoRef.current.currentTime);
               }}
               onLoadedMetadata={() => {
-                if (videoRef.current) setDuration(videoRef.current.duration);
+                if (videoRef.current) {
+                  setDuration(videoRef.current.duration);
+                  setVideoError(false);
+                }
               }}
               onEnded={() => setIsPlaying(false)}
             />

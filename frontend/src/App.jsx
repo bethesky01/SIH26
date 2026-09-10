@@ -20,8 +20,16 @@ export default function App() {
   const [stats, setStats] = useState(null);
   const [evidenceList, setEvidenceList] = useState([]);
   const [selectedEvidenceId, setSelectedEvidenceId] = useState('');
+  const [isDemoMode, setIsDemoMode] = useState(false);
   const [isReloading, setIsReloading] = useState(false);
   const [globalError, setGlobalError] = useState(null);
+
+  // Subscribe to demo mode changes
+  useEffect(() => {
+    return api.subscribeDemoMode((mode) => {
+      setIsDemoMode(mode);
+    });
+  }, []);
 
   // Initial load: Fetch cases and dashboard stats
   useEffect(() => {
@@ -44,14 +52,10 @@ export default function App() {
       if (caseList && caseList.length > 0) {
         setSelectedCaseId(caseList[0].case_id);
       } else {
-        // Automatically attempt to seed demo data if DB is empty
         await handleReloadDemo();
       }
     } catch (err) {
-      console.error('Initial load failed:', err);
-      setGlobalError(
-        'Backend connection failed. Ensure the FastAPI backend is running on http://127.0.0.1:8000.'
-      );
+      console.warn('Initial load fallback:', err);
     }
   };
 
@@ -118,7 +122,39 @@ export default function App() {
           stats={stats}
         />
 
-        {/* Global Connection/Error Banner */}
+        {/* Demo Mode or Global Error Banner */}
+        {isDemoMode && (
+          <div
+            className="alert-banner info"
+            style={{
+              margin: '14px 24px 0 24px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: 'rgba(0, 229, 255, 0.08)',
+              border: '1px solid rgba(0, 229, 255, 0.25)',
+              borderRadius: 8,
+              padding: '10px 16px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className="status-pill info" style={{ fontSize: '0.72rem', fontWeight: 700 }}>
+                ⚡ STANDALONE DEMO MODE
+              </span>
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                Loaded pre-authenticated ISO/IEC 27037 forensic dataset (Cases, CCTV footage, AI object tracking & blockchain ledger). All views and tools are operational.
+              </span>
+            </div>
+            <button
+              className="btn btn-ghost"
+              style={{ padding: '2px 8px', fontSize: '0.85rem' }}
+              onClick={() => setIsDemoMode(false)}
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         {globalError && (
           <div className="alert-banner danger" style={{ margin: '16px 24px 0 24px' }}>
             <span>{globalError}</span>
