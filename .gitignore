@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.pytest_cache/
+*.sqlite3
+*.db
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.turbo/
+.npm
+npm-debug.log*
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Storage / Artifacts (keep structure, ignore binary uploads)
+storage/evidence/original/*
+!storage/evidence/original/.gitkeep
+storage/evidence/forensic_copies/*
+!storage/evidence/forensic_copies/.gitkeep
+storage/recovered/*
+!storage/recovered/.gitkeep
+storage/reports/*
+!storage/reports/.gitkeep
+
+# Environment
+.env
+.env.local

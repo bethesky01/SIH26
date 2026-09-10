@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: forensic_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - FORENSIC_SECRET_KEY=${FORENSIC_SECRET_KEY:-cctv-forensic-production-key-2026}
+      - DATABASE_URL=sqlite:////app/storage/forensic_evidence.db
+    volumes:
+      - forensic_storage:/app/storage
+      - ./demo:/app/demo:ro
+    networks:
+      - forensic_network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: forensic_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - forensic_network
+
+volumes:
+  forensic_storage:
+    driver: local
+
+networks:
+  forensic_network:
+    driver: bridge
