@@ -1,10 +1,14 @@
 # Unified Multi-Vendor DVR/NVR Forensic Analysis & Intelligence Platform
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel%20Deployment-00e5ff?style=for-the-badge&logo=vercel&logoColor=white)](https://sih-2026-blush-seven.vercel.app/)
+
 [![Forensic Standard](https://img.shields.io/badge/Standard-ISO%2FIEC%2027037-emerald?style=flat-square)](https://www.iso.org/standard/44381.html)
 [![Backend](https://img.shields.io/badge/Backend-FastAPI%20%7C%20Python%203.11+-cyan?style=flat-square)](https://fastapi.tiangolo.com/)
 [![Frontend](https://img.shields.io/badge/Frontend-React%2019%20%7C%20Vite%208-blue?style=flat-square)](https://vitejs.dev/)
 [![Integrity](https://img.shields.io/badge/Integrity-Dual%20SHA--256%20%2B%20MD5-purple?style=flat-square)]()
 [![Ledger](https://img.shields.io/badge/Ledger-Immutable%20Blockchain%20Audit-orange?style=flat-square)]()
+
+> 🌐 **Live Interactive Demo**: **[https://sih-2026-blush-seven.vercel.app/](https://sih-2026-blush-seven.vercel.app/)**
 
 A digital forensics and intelligence platform designed for law enforcement, cyber-forensic analysts, and security investigators to ingest, acquire, parse, recover, normalize, analyze (AI/CV), and report CCTV evidence across heterogeneous, proprietary DVR/NVR hardware (**Hikvision**, **Dahua**, **CP Plus**, **Matrix**, and **Generic ISO-BMFF**).
 
@@ -23,10 +27,14 @@ A digital forensics and intelligence platform designed for law enforcement, cybe
 
 ## 🚀 Quick Start & Running Locally
 
-### Option 1: 1-Click Windows Launcher
+### 🌐 Option 1: Live Cloud Demo (Instant Access)
+Try the platform immediately in your browser with pre-loaded forensic evidence:  
+👉 **[https://sih-2026-blush-seven.vercel.app/](https://sih-2026-blush-seven.vercel.app/)**
+
+### Option 2: 1-Click Windows Launcher (Local Full-Stack)
 Double-click [`start.bat`](start.bat) in the project root. It will automatically launch both the FastAPI backend and Vite frontend in background terminals.
 
-### Option 2: Manual Terminal Execution
+### Option 3: Manual Terminal Execution
 
 #### 1. Backend (Port 8000)
 ```bash
