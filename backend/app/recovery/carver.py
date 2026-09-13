@@ -16,44 +16,36 @@ class ForensicCarver:
         "DHAV_HDR":  (b"DHAV", "Dahua Video Stream Packet Header"),
         "MP4_FTYP":  (b"ftyp", "ISO-BMFF Container Identification Atom"),
         "MP4_MDAT":  (b"mdat", "Media Data Container Atom"),
-        "RIFF_AVI":  (b"RIFF", "AVI Resource Interchange File Format")
+        "RIFF_AVI":  (b"RIFF", "AVI Resource Interchange File Format"),
+        "JPEG_SOI":  (b"\xff\xd8\xff", "JPEG Image / Video Keyframe Snapshot Header"),
+        "PNG_HDR":   (b"\x89PNG\r\n\x1a\n", "PNG Lossless Evidence Graphic / Snapshot Header"),
+        "BMP_HDR":   (b"BM", "BMP Bitmap Raster Frame Header"),
+        "HIK_FS":    (b"HKEX", "Hikvision Master Storage Superblock")
     }
 
     @classmethod
-    def scan_fragments(cls, file_path: str | Path, max_bytes: int = 10 * 1024 * 1024) -> List[Dict[str, Any]]:
+    def scan_bytes(cls, data: bytes) -> List[Dict[str, Any]]:
         """
-        Scans binary stream for video signatures, corrupted headers, and recoverable fragments.
+        Scans in-memory binary byte stream for forensic video and image signatures.
         """
-        path = Path(file_path)
-        if not path.exists():
-            return []
-
         results = []
-        try:
-            with open(path, "rb") as f:
-                data = f.read(max_bytes)
-        except Exception:
-            return []
-
         for sig_name, (sig_bytes, desc) in cls.SIGNATURES.items():
             matches = [m.start() for m in re.finditer(re.escape(sig_bytes), data)]
-            for i, offset in enumerate(matches[:3]):  # capture up to 3 per signature
+            for i, offset in enumerate(matches[:3]):
                 hex_offset = f"0x{offset:08X}"
-                # Sample surrounding hex bytes
                 sample_hex = " ".join(f"{b:02x}" for b in data[offset:offset+8])
-                
-                # Determine recovery status based on signature type
-                if sig_name in ("H.264_IDR", "DHAV_HDR", "H.264_SPS"):
+
+                if sig_name in ("H.264_IDR", "DHAV_HDR", "H.264_SPS", "JPEG_SOI", "PNG_HDR"):
                     status = "Recovered"
-                    confidence = 0.94
+                    confidence = 0.95
                     est_dur = 45.0
-                elif sig_name in ("MP4_MDAT", "H.265_VPS"):
+                elif sig_name in ("MP4_MDAT", "H.265_VPS", "HIK_FS"):
                     status = "Recoverable"
                     confidence = 0.88
                     est_dur = 30.0
-                elif sig_name == "H.264_PPS":
+                elif sig_name in ("H.264_PPS", "BMP_HDR"):
                     status = "Partially Recoverable"
-                    confidence = 0.75
+                    confidence = 0.78
                     est_dur = 15.0
                 else:
                     status = "Corrupted"
@@ -69,6 +61,23 @@ class ForensicCarver:
                     "confidence": confidence,
                     "details": f"{desc} located at offset {hex_offset}."
                 })
+        return results
+
+    @classmethod
+    def scan_fragments(cls, file_path: str | Path, max_bytes: int = 10 * 1024 * 1024) -> List[Dict[str, Any]]:
+        """
+        Scans binary stream for video signatures, corrupted headers, and recoverable fragments.
+        """
+        path = Path(file_path)
+        if not path.exists():
+            return []
+
+        try:
+            with open(path, "rb") as f:
+                data = f.read(max_bytes)
+        except Exception:
+            return []
+        results = cls.scan_bytes(data)
 
         # Ensure at least 4 realistic fragments if file was small
         if len(results) < 3:

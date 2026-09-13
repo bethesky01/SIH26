@@ -238,6 +238,31 @@ function handleMockRequest(endpoint, options = {}) {
     };
   }
 
+  if (path === '/recovery/carve-file') {
+    const newCarved = {
+      id: 'rec-' + Date.now(),
+      cluster_offset_hex: '0x00A4F000',
+      cluster_offset_dec: 10809344,
+      recovered_length_bytes: 524288,
+      file_format: 'H.264 / AVC Bitstream',
+      codec_signature: '0x00000001 (SPS NALU)',
+      time_stamp_estimate: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      recovery_status: 'Recovered',
+      integrity_status: 'Verified SHA-256',
+      vendor_signature: 'Direct Byte Stream Carved',
+      evidence_filename: 'carved_fragment_0x00A4F000.h264',
+    };
+    liveRecovery.unshift(newCarved);
+    return {
+      status: 'SUCCESS',
+      filename: 'uploaded_forensic_source.bin',
+      file_size: 524288,
+      sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+      fragments_found: 3,
+      fragments: [newCarved, ...liveRecovery.slice(1, 3)],
+    };
+  }
+
   // 7. Timeline & Multi-Camera Correlations
   if (path === '/timeline') {
     return mockTimelineEvents;
@@ -444,6 +469,7 @@ export const api = {
   // Carving / Recovery
   getRecoveryRecords: (caseId) => request(`/recovery${caseId ? `?case_id=${encodeURIComponent(caseId)}` : ''}`),
   scanRecovery: (evidenceId) => request(`/recovery/scan/${encodeURIComponent(evidenceId)}`, { method: 'POST' }),
+  carveFile: (formData) => request('/recovery/carve-file', { method: 'POST', body: formData }),
 
   // Timeline & Multi-Camera Correlation
   getTimelineEvents: (caseId) => request(`/timeline${caseId ? `?case_id=${encodeURIComponent(caseId)}` : ''}`),
