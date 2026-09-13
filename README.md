@@ -1,4 +1,4 @@
-# Unified Multi-Vendor DVR/NVR Forensic Analysis & Intelligence Platform
+# Saboot Netra (सबूत नेत्र) — Unified DVR/NVR CCTV Forensic Analysis & Intelligence Platform
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel%20Deployment-00e5ff?style=for-the-badge&logo=vercel&logoColor=white)](https://sih-2026-blush-seven.vercel.app/)
 

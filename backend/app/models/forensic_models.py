@@ -1,5 +1,8 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
+
+def utc_now():
+    return datetime.now(timezone.utc)
 from sqlalchemy import (
     Column, String, Integer, Float, Boolean, DateTime, Text, ForeignKey
 )
@@ -18,8 +21,8 @@ class User(Base):
     role = Column(String(32), default="investigator")  # investigator, forensic_expert, admin
     organization = Column(String(128), default="Digital Forensic & Cyber Security Cell")
     badge_number = Column(String(64), default="INV-9821")
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
 
 class Case(Base):
@@ -35,8 +38,8 @@ class Case(Base):
     status = Column(String(32), default="Active")  # Active, Under Review, Closed, Archived
     priority = Column(String(32), default="High")  # Critical, High, Medium, Low
     incident_date = Column(String(64), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     # Relationships
     devices = relationship("Device", back_populates="case", cascade="all, delete-orphan")
@@ -61,8 +64,8 @@ class Device(Base):
     serial_number = Column(String(128), nullable=True)
     ip_address = Column(String(64), nullable=True)
     mac_address = Column(String(64), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     case = relationship("Case", back_populates="devices")
     cameras = relationship("Camera", back_populates="device", cascade="all, delete-orphan")
@@ -81,8 +84,8 @@ class Camera(Base):
     resolution = Column(String(32), default="1920x1080")
     fps = Column(Float, default=25.0)
     status = Column(String(32), default="Online")
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     device = relationship("Device", back_populates="cameras")
     evidence_items = relationship("Evidence", back_populates="camera")
@@ -108,7 +111,7 @@ class Evidence(Base):
     hash_sha256 = Column(String(64), nullable=False, index=True)
     hash_md5 = Column(String(32), nullable=False)
 
-    acquisition_timestamp = Column(DateTime, default=datetime.utcnow)
+    acquisition_timestamp = Column(DateTime, default=utc_now)
     acquisition_method = Column(String(128), default="Bit-Stream Forensic Copy (File-Level)")
     original_timestamp = Column(String(64), nullable=True)
     normalized_timestamp = Column(String(64), nullable=True)
@@ -121,8 +124,8 @@ class Evidence(Base):
 
     status = Column(String(32), default="Acquired")  # Acquired, Verified, Parsed, Recovered, Flagged
     is_read_only = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
     case = relationship("Case", back_populates="evidence_items")
     device = relationship("Device", back_populates="evidence_items")
@@ -155,7 +158,7 @@ class Detection(Base):
     bbox_h = Column(Float, default=0.4)
 
     metadata_json = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     evidence = relationship("Evidence", back_populates="detections")
 
@@ -175,7 +178,7 @@ class RecoveryRecord(Base):
     confidence = Column(Float, default=0.88)
     carved_file_path = Column(String(512), nullable=True)
     details = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     evidence = relationship("Evidence", back_populates="recovery_records")
 
@@ -196,7 +199,7 @@ class TimelineEvent(Base):
     description = Column(String(255), nullable=False)
     severity = Column(String(32), default="INFO")  # INFO, WARNING, CRITICAL
     confidence = Column(Float, default=1.0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     case = relationship("Case", back_populates="timeline_events")
     evidence = relationship("Evidence", back_populates="timeline_events")
@@ -213,10 +216,10 @@ class HashRecord(Base):
     baseline_sha256 = Column(String(64), nullable=False)
     baseline_md5 = Column(String(32), nullable=False)
     match_status = Column(String(32), default="MATCH")  # MATCH, MISMATCH
-    verification_timestamp = Column(DateTime, default=datetime.utcnow)
+    verification_timestamp = Column(DateTime, default=utc_now)
     verified_by = Column(String(128), default="Forensic Engine v1.0")
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     evidence = relationship("Evidence", back_populates="hash_records")
 
@@ -233,13 +236,13 @@ class ChainOfCustody(Base):
     actor_name = Column(String(128), default="Investigator Verma")
     actor_role = Column(String(64), default="Forensic Analyst")
     action = Column(String(128), nullable=False)  # Evidence Ingested, Hash Recalculated, etc.
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=utc_now)
 
     previous_hash = Column(String(64), nullable=False)
     current_hash = Column(String(64), nullable=False)
     evidence_hash = Column(String(64), nullable=True)
     description = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     case = relationship("Case", back_populates="custody_records")
     evidence = relationship("Evidence", back_populates="custody_records")
@@ -257,7 +260,7 @@ class Report(Base):
     format = Column(String(16), default="PDF")
     hash_sha256 = Column(String(64), nullable=False)
     summary_findings = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     case = relationship("Case", back_populates="reports")
 
@@ -272,5 +275,5 @@ class ProcessingJob(Base):
     status = Column(String(32), default="QUEUED")  # QUEUED, PROCESSING, COMPLETED, FAILED
     progress = Column(Integer, default=0)
     error_message = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)

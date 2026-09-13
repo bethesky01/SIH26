@@ -20,7 +20,7 @@ export default function Header({
           </div>
           <div>
             <div className="brand-title">
-              FORENSIC-NVR
+              SABOOT NETRA
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
               CCTV Evidence Platform

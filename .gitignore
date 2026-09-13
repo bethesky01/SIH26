@@ -10,6 +10,8 @@ ENV/
 .pytest_cache/
 *.sqlite3
 *.db
+*.db-shm
+*.db-wal
 
 # Node / Frontend
 node_modules/

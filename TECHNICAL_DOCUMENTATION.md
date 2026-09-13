@@ -1,5 +1,5 @@
 # Technical Specification & Architectural Approach
-## Unified Multi-Vendor DVR/NVR Forensic Analysis & Evidence Intelligence Platform
+## Saboot Netra (सबूत नेत्र) — Unified Multi-Vendor DVR/NVR Forensic Analysis & Evidence Intelligence Platform
 **Compliance Framework**: ISO/IEC 27037 Digital Evidence Standard & Section 65B Indian Evidence Act  
 **Document Version**: 1.0.0-PROD  
 **Date**: September 2026  

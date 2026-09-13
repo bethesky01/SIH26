@@ -1,9 +1,9 @@
 @echo off
-TITLE Forensic-NVR Evidence Intelligence Platform
+TITLE Saboot Netra - CCTV Evidence Intelligence Platform
 color 0B
 
 echo ==============================================================================
-echo    UNIFIED MULTI-VENDOR DVR/NVR FORENSIC INTELLIGENCE PLATFORM (ISO 27037)
+echo    SABOOT NETRA • CCTV/DVR FORENSIC INTELLIGENCE PLATFORM (ISO 27037)
 echo ==============================================================================
 echo.
 

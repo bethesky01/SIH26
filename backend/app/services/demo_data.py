@@ -1,6 +1,6 @@
 import os
 import shutil
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import numpy as np
 import cv2
@@ -334,7 +334,7 @@ def load_demo_investigation(db: Session) -> dict:
                 mime_type="video/mp4",
                 hash_sha256=sha256_hash,
                 hash_md5=md5_hash,
-                acquisition_timestamp=datetime.utcnow() - timedelta(hours=3),
+                acquisition_timestamp=datetime.now(timezone.utc) - timedelta(hours=3),
                 acquisition_method="Bit-Stream Forensic Image (Direct SATA/NVR Ingestion)",
                 original_timestamp=item["base_time"],
                 normalized_timestamp=item["norm_time"],
@@ -358,7 +358,7 @@ def load_demo_investigation(db: Session) -> dict:
                 baseline_sha256=sha256_hash,
                 baseline_md5=md5_hash,
                 match_status="MATCH",
-                verification_timestamp=datetime.utcnow() - timedelta(hours=2, minutes=50),
+                verification_timestamp=datetime.now(timezone.utc) - timedelta(hours=2, minutes=50),
                 verified_by="Lead Analyst R. Verma",
                 notes="Initial bit-stream ingestion integrity verification verified bit-for-bit."
             )
@@ -582,7 +582,7 @@ def load_demo_investigation(db: Session) -> dict:
     # 9. Immutable Blockchain-Style Chain of Custody Ledger (Blocks 0 to 7)
     existing_blocks = db.query(ChainOfCustody).filter(ChainOfCustody.case_id == case1.id).count()
     if existing_blocks == 0:
-        base_t = datetime.utcnow() - timedelta(hours=4)
+        base_t = datetime.now(timezone.utc) - timedelta(hours=4)
         append_ledger_event(
             db=db,
             case_id=case1.id,

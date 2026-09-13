@@ -24,41 +24,6 @@ export default function App() {
   const [isReloading, setIsReloading] = useState(false);
   const [globalError, setGlobalError] = useState(null);
 
-  // Subscribe to demo mode changes
-  useEffect(() => {
-    return api.subscribeDemoMode((mode) => {
-      setIsDemoMode(mode);
-    });
-  }, []);
-
-  // Initial load: Fetch cases and dashboard stats
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  // When selectedCaseId changes, load case data and evidence
-  useEffect(() => {
-    if (selectedCaseId) {
-      loadCaseData(selectedCaseId);
-    }
-  }, [selectedCaseId]);
-
-  const loadInitialData = async () => {
-    try {
-      setGlobalError(null);
-      const caseList = await api.getCases();
-      setCases(caseList || []);
-
-      if (caseList && caseList.length > 0) {
-        setSelectedCaseId(caseList[0].case_id);
-      } else {
-        await handleReloadDemo();
-      }
-    } catch (err) {
-      console.warn('Initial load fallback:', err);
-    }
-  };
-
   const loadCaseData = async (caseId) => {
     try {
       const [caseObj, statsData, evList] = await Promise.all([
@@ -95,6 +60,41 @@ export default function App() {
       setIsReloading(false);
     }
   };
+
+  const loadInitialData = async () => {
+    try {
+      setGlobalError(null);
+      const caseList = await api.getCases();
+      setCases(caseList || []);
+
+      if (caseList && caseList.length > 0) {
+        setSelectedCaseId(caseList[0].case_id);
+      } else {
+        await handleReloadDemo();
+      }
+    } catch (err) {
+      console.warn('Initial load fallback:', err);
+    }
+  };
+
+  // Subscribe to demo mode changes
+  useEffect(() => {
+    return api.subscribeDemoMode((mode) => {
+      setIsDemoMode(mode);
+    });
+  }, []);
+
+  // Initial load: Fetch cases and dashboard stats
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  // When selectedCaseId changes, load case data and evidence
+  useEffect(() => {
+    if (selectedCaseId) {
+      loadCaseData(selectedCaseId);
+    }
+  }, [selectedCaseId]);
 
   const handleInspectEvidence = (evidenceId) => {
     setSelectedEvidenceId(evidenceId);

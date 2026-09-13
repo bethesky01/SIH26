@@ -1,12 +1,12 @@
 import os
 from pathlib import Path
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 STORAGE_DIR = BASE_DIR / "storage"
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Unified DVR/NVR Forensic Analysis & Intelligence Platform"
+    PROJECT_NAME: str = "Saboot Netra - CCTV Forensic Analysis & Intelligence Platform"
     PROJECT_VERSION: str = "1.0.0-MVP"
     API_V1_PREFIX: str = "/api"
     SECRET_KEY: str = os.getenv("FORENSIC_SECRET_KEY", "cctv-forensic-sha256-audit-secret-2026")
@@ -23,8 +23,7 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str = f"sqlite:///{BASE_DIR / 'forensic_evidence.db'}"
 
-    class Config:
-        case_sensitive = True
+    model_config = SettingsConfigDict(case_sensitive=True)
 
 settings = Settings()
 

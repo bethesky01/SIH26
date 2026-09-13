@@ -190,3 +190,155 @@ def test_pdf_report_generation():
     finally:
         if os.path.exists(pdf_path):
             os.remove(pdf_path)
+
+def test_device_identification_module_1():
+    from backend.app.parsers.device_identifier import DVRDeviceIdentifier
+    from fastapi.testclient import TestClient
+    from backend.app.main import app
+
+    client = TestClient(app)
+
+    # 1. Test direct python engine for Hikvision
+    hik_res = DVRDeviceIdentifier.identify(header_bytes=b"HKEX\x00\x01HIKVISION", file_name="warehouse_cctv_01.dav")
+    assert hik_res["status"] == "SUCCESS"
+    assert hik_res["manufacturer"] == "Hikvision"
+    assert "DS-" in hik_res["model"]
+    assert "HIK-FS" in hik_res["filesystem"]
+    assert hik_res["channels"] == 16
+    assert "4 TB" in hik_res["storage_capacity"]
+    assert "H.264" in hik_res["video_codec"] or "H.265" in hik_res["video_codec"]
+
+    # 2. Test direct engine for Dahua
+    dah_res = DVRDeviceIdentifier.identify(header_bytes=b"DHAV\xfd\x00\x00", file_name="perimeter_gate.dav")
+    assert dah_res["manufacturer"] == "Dahua"
+    assert "DHFS" in dah_res["filesystem"]
+    assert dah_res["channels"] == 16
+    assert "4 TB" in dah_res["storage_capacity"]
+
+    # 3. Test direct engine for CP Plus
+    cp_res = DVRDeviceIdentifier.identify(sample_id="cpplus")
+    assert cp_res["manufacturer"] == "CP Plus"
+    assert cp_res["channels"] == 8
+    assert "2 TB" in cp_res["storage_capacity"]
+
+    # 4. Test REST API endpoint
+    response = client.post("/api/devices/identify", json={"sample_id": "hikvision"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["manufacturer"] == "Hikvision"
+    assert data["channels"] == 16
+    assert "4 TB" in data["storage_capacity"]
+    assert "magic_signatures" in data["forensic_signals"]
+
+def test_module_7_multi_camera_correlation_and_module_10_audit_trail():
+    from fastapi.testclient import TestClient
+    from backend.app.main import app
+
+    client = TestClient(app)
+
+    # 1. Test Module 7: Multi-Camera Event Correlation (Event #1032 across Cameras 1, 2, 5, 7)
+    res_corr = client.get("/api/timeline/correlations")
+    assert res_corr.status_code == 200
+    correlations = res_corr.json()
+    assert len(correlations) >= 1
+
+    event1032 = next(c for c in correlations if c["incident_id"] == "EVENT #1032")
+    assert event1032["total_cameras"] == 4
+    assert len(event1032["steps"]) == 4
+
+    # Verify trajectory sequence matches prompt
+    step_cams = [s["camera_name"] for s in event1032["steps"]]
+    assert any("Camera 1" in c for c in step_cams)
+    assert any("Camera 2" in c for c in step_cams)
+    assert any("Camera 5" in c for c in step_cams)
+    assert any("Camera 7" in c for c in step_cams)
+
+    # 2. Test Module 10: Simplified Chain of Custody Audit Trail ("Who, When, What")
+    res_audit = client.get("/api/custody/audit-trail")
+    assert res_audit.status_code == 200
+    audit = res_audit.json()
+    assert len(audit) == 6
+
+    events = [a["event"] for a in audit]
+    assert "Evidence acquired" in events
+    assert "Hash generated" in events
+    assert "Image created" in events
+    assert "Analysis started" in events
+    assert "Video recovered" in events
+    assert "Report generated" in events
+
+def test_validation_metrics_endpoint():
+    from fastapi.testclient import TestClient
+    from backend.app.main import app
+
+    client = TestClient(app)
+    res = client.get("/api/validation/metrics")
+    assert res.status_code == 200
+    data = res.json()
+    assert "recovery_rate" in data
+    assert "timestamp_accuracy" in data
+    assert "ai_validation" in data
+
+    # Verify recovery rate metrics
+    rr = data["recovery_rate"]
+    assert "recovery_rate_percent" in rr
+    assert rr["recovery_rate_percent"] >= 0.0
+
+    # Verify AI validation strictly flags missing ground-truth instead of fake metrics
+    ai = data["ai_validation"]
+    assert ai["has_ground_truth"] is False
+    assert ai["precision_percent"] is None
+    assert ai["recall_percent"] is None
+    assert "Validation dataset not provided" in ai["status_message"]
+
+def test_live_stream_intake():
+    from fastapi.testclient import TestClient
+    from backend.app.main import app
+
+    client = TestClient(app)
+    # Get active case
+    cases_res = client.get("/api/cases")
+    assert cases_res.status_code == 200
+    cases = cases_res.json()
+    assert len(cases) > 0
+    case_id = cases[0]["case_id"]
+
+    stream_payload = {
+        "case_id": case_id,
+        "stream_url": "rtsp://192.168.1.120:554/live/ch0",
+        "stream_name": "Gate North RTSP",
+        "camera_name": "Camera 09 - Perimeter Gate",
+        "vendor": "Dahua RTSP IP",
+        "capture_duration_seconds": 12.0
+    }
+    res = client.post("/api/evidence/live-stream", json=stream_payload)
+    assert res.status_code == 200
+    ev = res.json()
+    assert ev["evidence_id"].startswith("EVD-")
+    assert ev["hash_sha256"] is not None
+    assert len(ev["hash_sha256"]) == 64
+    assert ev["is_read_only"] is True
+
+def test_unsupported_format_handling():
+    from fastapi.testclient import TestClient
+    from backend.app.main import app
+    import io
+
+    client = TestClient(app)
+    cases = client.get("/api/cases").json()
+    case_id = cases[0]["case_id"]
+
+    # Upload an unsupported file format e.g. .xyz
+    fake_file = io.BytesIO(b"\x99\x88\x77\x66UNSUPPORTED_DATA_STREAM")
+    res = client.post(
+        "/api/evidence/upload",
+        data={"case_id": case_id},
+        files={"file": ("proprietary_unknown.xyz", fake_file, "application/octet-stream")}
+    )
+    assert res.status_code == 200
+    ev = res.json()
+    assert ev["status"] == "Unsupported"
+    assert ev["vendor"] == "Unsupported Vendor"
+
+
+

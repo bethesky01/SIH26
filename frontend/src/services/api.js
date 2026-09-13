@@ -8,7 +8,11 @@ import {
   mockRecoveryRecords,
   mockReports,
   mockAdapters,
-  getMockDashboardStats
+  getMockDashboardStats,
+  getMockDeviceIdentification,
+  mockMultiCameraCorrelations,
+  mockAuditTrail,
+  mockValidationMetrics
 } from './mockData';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -93,6 +97,11 @@ function handleMockRequest(endpoint, options = {}) {
     ];
   }
 
+  if (path === '/devices/identify') {
+    const body = JSON.parse(options.body || '{}');
+    return getMockDeviceIdentification(body.sample_id, body.filename);
+  }
+
   if (path === '/cameras') {
     return liveCameras;
   }
@@ -140,6 +149,40 @@ function handleMockRequest(endpoint, options = {}) {
     };
     liveEvidence.unshift(newEv);
     return newEv;
+  }
+
+  if (path === '/evidence/live-stream') {
+    const payload = JSON.parse(options.body || '{}');
+    const newEv = {
+      id: 'ev-rtsp-' + Date.now(),
+      evidence_id: `EVD-${String(liveEvidence.length + 124).padStart(6, '0')}`,
+      filename: `RTSP_${(payload.stream_name || 'Camera').replace(/\s+/g, '_')}.mp4`,
+      camera_name: payload.camera_name || 'RTSP IP Camera',
+      file_size: 524288,
+      mime_type: 'video/mp4',
+      hash_sha256: '9b7a4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b',
+      hash_md5: 'a8b7c6d5e4f3a2b10987654321fedcba',
+      baseline_sha256: '9b7a4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b',
+      baseline_md5: 'a8b7c6d5e4f3a2b10987654321fedcba',
+      acquisition_timestamp: new Date().toISOString(),
+      original_timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      normalized_timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      duration_seconds: payload.capture_duration_seconds || 10.0,
+      resolution: '1920x1080',
+      fps: 25.0,
+      codec: 'H.264 / RTSP Stream',
+      vendor: payload.vendor || 'Generic RTSP IP Camera',
+      status: 'Verified',
+      is_read_only: true,
+      case_id: payload.case_id || caseId,
+      tampered: false,
+    };
+    liveEvidence.unshift(newEv);
+    return newEv;
+  }
+
+  if (path.startsWith('/validation/metrics')) {
+    return mockValidationMetrics;
   }
 
   if (path.startsWith('/evidence/') && !path.includes('/stream')) {
@@ -195,9 +238,13 @@ function handleMockRequest(endpoint, options = {}) {
     };
   }
 
-  // 7. Timeline
+  // 7. Timeline & Multi-Camera Correlations
   if (path === '/timeline') {
     return mockTimelineEvents;
+  }
+
+  if (path === '/timeline/correlations') {
+    return mockMultiCameraCorrelations;
   }
 
   // 8. AI & Computer Vision
@@ -270,7 +317,11 @@ function handleMockRequest(endpoint, options = {}) {
     };
   }
 
-  // 10. Custody Blockchain Ledger
+  // 10. Custody Blockchain Ledger & Simplified Audit Trail
+  if (path === '/custody/audit-trail') {
+    return mockAuditTrail;
+  }
+
   if (path.startsWith('/custody/verify/')) {
     return {
       is_valid: true,
@@ -347,7 +398,7 @@ async function request(endpoint, options = {}) {
     }
 
     return await response.json();
-  } catch (error) {
+  } catch {
     // Network failure / 404 / connection refused ➔ Graceful Standalone Fallback
     console.warn(`[Forensic Platform] Backend offline at ${API_BASE}. Falling back to standalone mock pipeline for: ${endpoint}`);
     setDemoMode(true);
@@ -387,25 +438,35 @@ export const api = {
   // Parsers & Adapters
   getParserAdapters: () => request('/parsers/adapters'),
   inspectEvidenceParser: (evidenceId) => request(`/parsers/inspect/${encodeURIComponent(evidenceId)}`),
+  identifyDevice: (payload) =>
+    request('/devices/identify', { method: 'POST', body: JSON.stringify(payload || {}) }),
 
   // Carving / Recovery
   getRecoveryRecords: (caseId) => request(`/recovery${caseId ? `?case_id=${encodeURIComponent(caseId)}` : ''}`),
   scanRecovery: (evidenceId) => request(`/recovery/scan/${encodeURIComponent(evidenceId)}`, { method: 'POST' }),
 
-  // Timeline
+  // Timeline & Multi-Camera Correlation
   getTimelineEvents: (caseId) => request(`/timeline${caseId ? `?case_id=${encodeURIComponent(caseId)}` : ''}`),
+  getMultiCameraCorrelations: (caseId) => request(`/timeline/correlations${caseId ? `?case_id=${encodeURIComponent(caseId)}` : ''}`),
 
   // AI & Computer Vision
   getDetections: (evidenceId) => request(`/ai/detections${evidenceId ? `?evidence_id=${encodeURIComponent(evidenceId)}` : ''}`),
   analyzeEvidenceAI: (evidenceId) => request(`/ai/analyze/${encodeURIComponent(evidenceId)}`, { method: 'POST' }),
   searchAIEvents: (queryPayload) => request('/ai/search', { method: 'POST', body: JSON.stringify(queryPayload) }),
 
+  // Accuracy & Validation Module
+  getValidationMetrics: (caseId) => request(`/validation/metrics${caseId ? `?case_id=${encodeURIComponent(caseId)}` : ''}`),
+
+  // RTSP Live Stream Ingest
+  ingestLiveStream: (payload) => request('/evidence/live-stream', { method: 'POST', body: JSON.stringify(payload) }),
+
   // Cryptographic Integrity & Tamper Testing
   verifyIntegrity: (evidenceId) => request(`/integrity/verify/${encodeURIComponent(evidenceId)}`, { method: 'POST' }),
   simulateTamper: (evidenceId) => request(`/integrity/simulate-tamper/${encodeURIComponent(evidenceId)}`, { method: 'POST' }),
 
-  // Blockchain Audit Ledger
+  // Blockchain Audit Ledger & Simplified Custody Trail
   getCustodyLedger: (caseId) => request(`/custody/${encodeURIComponent(caseId)}`),
+  getAuditTrail: (caseId) => request(`/custody/audit-trail${caseId ? `?case_id=${encodeURIComponent(caseId)}` : ''}`),
   verifyCustodyChain: (caseId) => request(`/custody/verify/${encodeURIComponent(caseId)}`, { method: 'POST' }),
 
   // Reports

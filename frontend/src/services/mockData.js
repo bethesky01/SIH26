@@ -228,67 +228,77 @@ export const mockDetections = [
   {
     id: "det-01",
     evidence_id: "9e3aa2a1-bfa9-4f58-809c-11d78b9eda79",
-    timestamp_sec: 3.5,
-    label: "Person (Suspicious Subject)",
-    confidence: 0.94,
-    bbox_x: 0.18,
-    bbox_y: 0.42,
-    bbox_w: 0.15,
-    bbox_h: 0.45,
-    cctv_time: "2026-08-22 22:10:03.50",
-    normalized_time: "2026-08-22 22:15:33.50"
+    timestamp_sec: 2.5,
+    label: "Person (93%)",
+    category: "person",
+    confidence: 0.93,
+    bbox_x: 0.22,
+    bbox_y: 0.35,
+    bbox_w: 0.16,
+    bbox_h: 0.52,
+    cctv_time: "10:31:42",
+    normalized_time: "10:31:42",
+    forensic_notes: "Subject detected in motion trajectory. Bounding box coordinates extracted."
   },
   {
     id: "det-02",
     evidence_id: "9e3aa2a1-bfa9-4f58-809c-11d78b9eda79",
-    timestamp_sec: 6.2,
-    label: "Vehicle (Unmarked Van)",
-    confidence: 0.89,
+    timestamp_sec: 5.8,
+    label: "Car (88%)",
+    category: "vehicle",
+    confidence: 0.88,
     bbox_x: 0.52,
-    bbox_y: 0.50,
-    bbox_w: 0.32,
-    bbox_h: 0.35,
-    cctv_time: "2026-08-22 22:10:06.20",
-    normalized_time: "2026-08-22 22:15:36.20"
+    bbox_y: 0.48,
+    bbox_w: 0.34,
+    bbox_h: 0.36,
+    cctv_time: "10:31:45",
+    normalized_time: "10:31:45",
+    forensic_notes: "White passenger sedan observed at outer access roadway."
   },
   {
     id: "det-03",
     evidence_id: "9e3aa2a1-bfa9-4f58-809c-11d78b9eda79",
-    timestamp_sec: 9.0,
-    label: "Face (Partial Masking)",
-    confidence: 0.78,
-    bbox_x: 0.22,
-    bbox_y: 0.44,
-    bbox_w: 0.07,
-    bbox_h: 0.10,
-    cctv_time: "2026-08-22 22:10:09.00",
-    normalized_time: "2026-08-22 22:15:39.00"
+    timestamp_sec: 8.2,
+    label: "Bike (91%)",
+    category: "vehicle",
+    confidence: 0.91,
+    bbox_x: 0.38,
+    bbox_y: 0.55,
+    bbox_w: 0.18,
+    bbox_h: 0.28,
+    cctv_time: "10:31:48",
+    normalized_time: "10:31:48",
+    forensic_notes: "Two-wheeler commuter bike passing through gate boundary."
   },
   {
     id: "det-04",
-    evidence_id: "485cf3d3-7694-4256-a53e-126bc614d748",
-    timestamp_sec: 4.8,
-    label: "Person (Intruder)",
-    confidence: 0.92,
-    bbox_x: 0.30,
+    evidence_id: "9e3aa2a1-bfa9-4f58-809c-11d78b9eda79",
+    timestamp_sec: 10.5,
+    label: "Face (Bounding Box Detected)",
+    category: "face",
+    confidence: 0.86,
+    bbox_x: 0.26,
     bbox_y: 0.38,
-    bbox_w: 0.12,
-    bbox_h: 0.48,
-    cctv_time: "2026-08-22 22:15:34.80",
-    normalized_time: "2026-08-22 22:15:34.80"
+    bbox_w: 0.08,
+    bbox_h: 0.11,
+    cctv_time: "10:31:50",
+    normalized_time: "10:31:50",
+    forensic_notes: "Face detection only ('There is a face'). Not biometric identity match ('Matches X')."
   },
   {
     id: "det-05",
-    evidence_id: "485cf3d3-7694-4256-a53e-126bc614d748",
-    timestamp_sec: 11.4,
-    label: "Motion (Perimeter Fence Breach)",
-    confidence: 0.88,
-    bbox_x: 0.25,
-    bbox_y: 0.30,
-    bbox_w: 0.25,
-    bbox_h: 0.60,
-    cctv_time: "2026-08-22 22:15:41.40",
-    normalized_time: "2026-08-22 22:15:41.40"
+    evidence_id: "9e3aa2a1-bfa9-4f58-809c-11d78b9eda79",
+    timestamp_sec: 13.0,
+    label: "Motion (Perimeter Flow 96%)",
+    category: "motion",
+    confidence: 0.96,
+    bbox_x: 0.15,
+    bbox_y: 0.20,
+    bbox_w: 0.70,
+    bbox_h: 0.65,
+    cctv_time: "10:31:53",
+    normalized_time: "10:31:53",
+    forensic_notes: "Frame differencing detected significant displacement in perimeter zone."
   }
 ];
 
@@ -621,3 +631,477 @@ export function getMockDashboardStats(caseId = "CASE-2026-001") {
     ]
   };
 }
+
+// Module 1: Automated DVR/NVR Device Identification Profiles
+export const mockDeviceProfiles = {
+  hikvision: {
+    status: "SUCCESS",
+    identified: true,
+    confidence: 0.98,
+    manufacturer: "Hikvision",
+    model: "DS-7616NI-I2 / 16P AccuSense NVR",
+    filesystem: "Proprietary HIK-FS (Hikvision Cluster)",
+    video_codec: "H.264 / H.265 (AVC/HEVC)",
+    channels: 16,
+    storage_capacity: "4 TB (4,000 GB)",
+    forensic_signals: {
+      magic_signatures: [
+        { hex: "48 4B 45 58", ascii: "HKEX", offset: "0x0000", desc: "Hikvision Master Header Marker" },
+        { hex: "48 49 4B 56 49 53 49 4F 4E", ascii: "HIKVISION", offset: "0x0200", desc: "Firmware Volume Descriptor" },
+        { hex: "00 00 00 01 67", ascii: "NALU-SPS", offset: "0x4000", desc: "H.264 Sequence Parameter Set Start Code" },
+        { hex: "00 00 00 01 40", ascii: "NALU-VPS", offset: "0x4080", desc: "H.265 Video Parameter Set Start Code" }
+      ],
+      filesystem_structure: {
+        name: "HIK-FS v2.4",
+        cluster_size: "2,097,152 bytes (2 MB)",
+        allocation_scheme: "Indexed Circular Track Allocation",
+        superblock_offset: "0x00004000 (LBA 32)",
+        disk_signature: "0x789A_HIK_NVR"
+      },
+      partition_geometry: {
+        scheme: "MBR with Proprietary Partition Type 0xDA",
+        total_sectors: 7814037168,
+        sector_size: "512 bytes",
+        total_capacity_bytes: 4000787030016,
+        formatted_capacity: "4 TB"
+      },
+      video_analysis: {
+        codec: "H.264 / H.265 (AVC/HEVC)",
+        resolution: "1920x1080 Full HD (Main Stream)",
+        frame_rate: "25.0 fps constant",
+        nalu_start_code: "0x00000001 (Intact Parameter Sets)",
+        container: ".dav / .mp4"
+      },
+      channel_layout: {
+        total_channels: 16,
+        channels_list: Array.from({ length: 16 }, (_, i) => `CH-${String(i + 1).padStart(2, '0')}`),
+        multiplex_mode: "Time-division synchronized recording"
+      },
+      metadata: {
+        firmware_version: "v4.61.025 build 230915",
+        serial_number: "DS7616-2026-X99218",
+        board_revision: "REV-C 2024",
+        ip_default: "192.168.1.64",
+        osd_timestamp_format: "Embedded Proprietary SEI Track"
+      },
+      exported_extensions: [".dav", ".mp4", ".h264", ".h265", ".raw", ".img"],
+      directory_patterns: [
+        "/HIKVISION/dat/ch01_*.mp4",
+        "/dvr_ch16/2026-08-22/",
+        "/hik_record/index.bin"
+      ]
+    },
+    compliance: "ISO/IEC 27037 Digital Evidence Acquisition Standard",
+    summary_statement: "Disk/File identified as Hikvision DS-7616NI-I2 / 16P with Proprietary HIK-FS, 16 Channels, 4 TB storage, encoding H.264/H.265."
+  },
+  dahua: {
+    status: "SUCCESS",
+    identified: true,
+    confidence: 0.97,
+    manufacturer: "Dahua",
+    model: "DHI-NVR5216-16P-I WizMind 16CH NVR",
+    filesystem: "DHFS 4.0 (Dahua File System)",
+    video_codec: "Smart H.265 / HEVC",
+    channels: 16,
+    storage_capacity: "4 TB (4,000 GB)",
+    forensic_signals: {
+      magic_signatures: [
+        { hex: "44 48 41 56", ascii: "DHAV", offset: "0x0000", desc: "Dahua Video Packet Frame Tag" },
+        { hex: "44 41 48 55 41", ascii: "DAHUA", offset: "0x0400", desc: "DHFS Master Superblock" },
+        { hex: "64 68 61 76", ascii: "dhav", offset: "0x0800", desc: "DHAV Synchronized Audio Marker" }
+      ],
+      filesystem_structure: {
+        name: "DHFS 4.0",
+        cluster_size: "8,388,608 bytes (8 MB)",
+        allocation_scheme: "Fixed Extent Multi-Stream Blocks",
+        superblock_offset: "0x00008000 (LBA 64)",
+        disk_signature: "0x4448_DHAV_VOL"
+      },
+      partition_geometry: {
+        scheme: "GPT with DHFS Raw Extents",
+        total_sectors: 7814037168,
+        sector_size: "512 bytes",
+        total_capacity_bytes: 4000787030016,
+        formatted_capacity: "4 TB"
+      },
+      video_analysis: {
+        codec: "Smart H.265 / HEVC",
+        resolution: "1920x1080 Full HD (Main Stream)",
+        frame_rate: "25.0 fps constant",
+        nalu_start_code: "0x00000001 (Intact Parameter Sets)",
+        container: ".dav / .dhfs"
+      },
+      channel_layout: {
+        total_channels: 16,
+        channels_list: Array.from({ length: 16 }, (_, i) => `CH-${String(i + 1).padStart(2, '0')}`),
+        multiplex_mode: "DHFS Circular Multi-Stream"
+      },
+      metadata: {
+        firmware_version: "v4.002.0000000.1.R build 2024",
+        serial_number: "DHAV-5216-WIZ-994",
+        board_revision: "WizMind-II",
+        ip_default: "192.168.1.108",
+        osd_timestamp_format: "DHAV Frame Packet Header Time"
+      },
+      exported_extensions: [".dav", ".dhfs", ".mp4", ".raw"],
+      directory_patterns: [
+        "/dahua/record/ch01/",
+        "/DHFS/track_index.bin",
+        "/dav/2026-08-22/"
+      ]
+    },
+    compliance: "ISO/IEC 27037 Digital Evidence Acquisition Standard",
+    summary_statement: "Disk/File identified as Dahua DHI-NVR5216-16P-I with DHFS 4.0, 16 Channels, 4 TB storage, encoding Smart H.265."
+  },
+  cpplus: {
+    status: "SUCCESS",
+    identified: true,
+    confidence: 0.96,
+    manufacturer: "CP Plus",
+    model: "CP-UVR-0801E1-CS Orange Series 8CH DVR",
+    filesystem: "CPFS / FAT32 Hybrid Index",
+    video_codec: "H.264 High Profile",
+    channels: 8,
+    storage_capacity: "2 TB (2,000 GB)",
+    forensic_signals: {
+      magic_signatures: [
+        { hex: "43 50 50 4C 55 53", ascii: "CPPLUS", offset: "0x0000", desc: "CP Plus Volume Marker" },
+        { hex: "43 50 46 53", ascii: "CPFS", offset: "0x0200", desc: "CPFS Cluster Table Header" },
+        { hex: "55 56 52 31", ascii: "UVR1", offset: "0x0400", desc: "CP-UVR Series Stream Marker" }
+      ],
+      filesystem_structure: {
+        name: "CPFS Hybrid",
+        cluster_size: "1,048,576 bytes (1 MB)",
+        allocation_scheme: "Contiguous Video Ringbuffer",
+        superblock_offset: "0x00002000 (LBA 16)",
+        disk_signature: "0x4350_CPFS_DVR"
+      },
+      partition_geometry: {
+        scheme: "MBR Partition Table",
+        total_sectors: 3907029168,
+        sector_size: "512 bytes",
+        total_capacity_bytes: 2000398934016,
+        formatted_capacity: "2 TB"
+      },
+      video_analysis: {
+        codec: "H.264 High Profile",
+        resolution: "1920x1080 Full HD",
+        frame_rate: "25.0 fps",
+        nalu_start_code: "0x00000001",
+        container: ".dav / .cvr"
+      },
+      channel_layout: {
+        total_channels: 8,
+        channels_list: Array.from({ length: 8 }, (_, i) => `CH-${String(i + 1).padStart(2, '0')}`),
+        multiplex_mode: "CP-UVR Interleaved Ringbuffer"
+      },
+      metadata: {
+        firmware_version: "v3.218.0000.0 build 2024",
+        serial_number: "CPPL-UVR-881902",
+        board_revision: "Orange-RevB",
+        ip_default: "192.168.1.250",
+        osd_timestamp_format: "CP-Plus Index Table"
+      },
+      exported_extensions: [".dav", ".mp4", ".cvr", ".raw"],
+      directory_patterns: [
+        "/RECORDING/CH01/",
+        "/CP_BACKUP/2026-08-22/",
+        "/cvr_stream.idx"
+      ]
+    },
+    compliance: "ISO/IEC 27037 Digital Evidence Acquisition Standard",
+    summary_statement: "Disk/File identified as CP Plus CP-UVR-0801E1-CS with CPFS Hybrid, 8 Channels, 2 TB storage, encoding H.264."
+  },
+  matrix: {
+    status: "SUCCESS",
+    identified: true,
+    confidence: 0.95,
+    manufacturer: "Matrix",
+    model: "SATATYA NVR4808X Enterprise 8CH IP-NVR",
+    filesystem: "Matrix SafeFS (Fault-Tolerant)",
+    video_codec: "H.265 / HEVC Main Profile",
+    channels: 8,
+    storage_capacity: "4 TB (4,000 GB)",
+    forensic_signals: {
+      magic_signatures: [
+        { hex: "4D 41 54 52 49 58", ascii: "MATRIX", offset: "0x0000", desc: "Matrix Enterprise Identifier" },
+        { hex: "4D 58 4E 56 52", ascii: "MXNVR", offset: "0x0200", desc: "SATATYA Stream Header" },
+        { hex: "1A 45 DF A3", ascii: "EBML", offset: "0x0000", desc: "MKV Container Header" }
+      ],
+      filesystem_structure: {
+        name: "Matrix SafeFS",
+        cluster_size: "4,194,304 bytes (4 MB)",
+        allocation_scheme: "Encrypted Parity Striped Clusters",
+        superblock_offset: "0x00001000 (LBA 8)",
+        disk_signature: "0x4D58_SAFE_FS"
+      },
+      partition_geometry: {
+        scheme: "GPT Enterprise Scheme",
+        total_sectors: 7814037168,
+        sector_size: "512 bytes",
+        total_capacity_bytes: 4000787030016,
+        formatted_capacity: "4 TB"
+      },
+      video_analysis: {
+        codec: "H.265 / HEVC Main Profile",
+        resolution: "1920x1080 Full HD",
+        frame_rate: "25.0 fps",
+        nalu_start_code: "0x00000001",
+        container: ".mp4 / .mat / .mkv"
+      },
+      channel_layout: {
+        total_channels: 8,
+        channels_list: Array.from({ length: 8 }, (_, i) => `CH-${String(i + 1).padStart(2, '0')}`),
+        multiplex_mode: "SATATYA Secure Stream Index"
+      },
+      metadata: {
+        firmware_version: "v2.8.1-P3 Enterprise",
+        serial_number: "MX-SAT-4808-771",
+        board_revision: "SATATYA-Pro",
+        ip_default: "192.168.1.100",
+        osd_timestamp_format: "UTC MKV Timeline Track"
+      },
+      exported_extensions: [".mp4", ".mat", ".mkv", ".avi"],
+      directory_patterns: [
+        "/SATATYA/ARCHIVE/",
+        "/NVR_CAM01/2026/",
+        "/matrix_sys.cfg"
+      ]
+    },
+    compliance: "ISO/IEC 27037 Digital Evidence Acquisition Standard",
+    summary_statement: "Disk/File identified as Matrix SATATYA NVR4808X with SafeFS, 8 Channels, 4 TB storage, encoding H.265."
+  }
+};
+
+export function getMockDeviceIdentification(sampleId = "hikvision", filename = "") {
+  const clean = (sampleId || filename || "").toLowerCase();
+  if (clean.includes("dah")) return mockDeviceProfiles.dahua;
+  if (clean.includes("cp")) return mockDeviceProfiles.cpplus;
+  if (clean.includes("mat")) return mockDeviceProfiles.matrix;
+  return mockDeviceProfiles.hikvision;
+}
+
+// ===========================================================================
+// MODULE 7: Multi-Camera Event Correlation Data (Spatial-Temporal Incident Mapping)
+// ===========================================================================
+export const mockMultiCameraCorrelations = [
+  {
+    incident_id: "EVENT #1032",
+    title: "Cross-Camera Subject Infiltration & Exfiltration",
+    description: "Instead of examining four videos independently, the platform automatically correlates spatial camera relationships and temporal normalized offsets into a single coherent incident timeline.",
+    suspect_tag: "Subject-Alpha (Dark Hooded Jacket & Backpack)",
+    total_cameras: 4,
+    start_time: "10:31:02",
+    end_time: "10:35:42",
+    duration: "4m 40s",
+    status: "Correlated & Verified",
+    steps: [
+      {
+        step: 1,
+        time: "10:31:02",
+        camera_id: "cam-01",
+        camera_name: "Camera 1 (Main Entrance Gate)",
+        zone: "Zone A: Perimeter Access",
+        action: "Person detected — Person enters building through revolving door",
+        confidence: 0.93,
+        detection_type: "Person",
+        badge_color: "var(--cyan-primary)",
+        osd_drift: "±0s (Master)"
+      },
+      {
+        step: 2,
+        time: "10:31:17",
+        camera_id: "cam-02",
+        camera_name: "Camera 2 (Ground Floor Corridor)",
+        zone: "Zone B: Main Hallway",
+        action: "Person detected — Person walks corridor towards East Wing",
+        confidence: 0.91,
+        detection_type: "Person",
+        badge_color: "var(--emerald-status)",
+        osd_drift: "+144s (+2m24s)"
+      },
+      {
+        step: 3,
+        time: "10:32:01",
+        camera_id: "cam-05",
+        camera_name: "Camera 5 (Restricted Server Room Door)",
+        zone: "Zone C: High-Security Vault",
+        action: "Person detected — Person enters server room using cloned RFID badge",
+        confidence: 0.95,
+        detection_type: "Person",
+        badge_color: "var(--amber-status)",
+        osd_drift: "-75s (-1m15s)"
+      },
+      {
+        step: 4,
+        time: "10:35:42",
+        camera_id: "cam-07",
+        camera_name: "Camera 7 (Perimeter Emergency Exit)",
+        zone: "Zone D: West Alley Exit",
+        action: "Person detected — Person leaves building via fire escape stairwell",
+        confidence: 0.89,
+        detection_type: "Person",
+        badge_color: "var(--rose-tamper)",
+        osd_drift: "+210s (+3m30s)"
+      }
+    ]
+  },
+  {
+    incident_id: "EVENT #1033",
+    title: "Getaway Commercial Van Ingress & Egress",
+    description: "Automated vehicle trajectory linking perimeter road, loading dock staging, and high-speed highway escape.",
+    suspect_tag: "Vehicle-Bravo (White Commercial Van)",
+    total_cameras: 3,
+    start_time: "10:29:15",
+    end_time: "10:36:10",
+    duration: "6m 55s",
+    status: "Correlated & Verified",
+    steps: [
+      {
+        step: 1,
+        time: "10:29:15",
+        camera_id: "cam-03",
+        camera_name: "Camera 3 (North Access Road)",
+        zone: "Zone A: Perimeter Access",
+        action: "Vehicle detected — Car (88%) enters perimeter road at 35 km/h",
+        confidence: 0.88,
+        detection_type: "Vehicle",
+        badge_color: "var(--cyan-primary)",
+        osd_drift: "-12s"
+      },
+      {
+        step: 2,
+        time: "10:30:40",
+        camera_id: "cam-04",
+        camera_name: "Camera 4 (Loading Dock 4)",
+        zone: "Zone B: Staging Bay",
+        action: "Vehicle detected — Parks in blind spot, hazard lights engaged",
+        confidence: 0.92,
+        detection_type: "Vehicle",
+        badge_color: "var(--amber-status)",
+        osd_drift: "+45s"
+      },
+      {
+        step: 3,
+        time: "10:36:10",
+        camera_id: "cam-07",
+        camera_name: "Camera 7 (Perimeter Emergency Exit)",
+        zone: "Zone D: West Alley Exit",
+        action: "Vehicle detected — Picks up Subject-Alpha and departs towards highway",
+        confidence: 0.91,
+        detection_type: "Vehicle",
+        badge_color: "var(--rose-tamper)",
+        osd_drift: "+210s"
+      }
+    ]
+  }
+];
+
+// ===========================================================================
+// MODULE 10: Simplified Chain of Custody Audit Trail ("Who, When, What")
+// ===========================================================================
+export const mockAuditTrail = [
+  {
+    event: "Evidence acquired",
+    person: "Analyst A (Inspector R. Verma)",
+    role: "First Responder / Acquisition Specialist",
+    time: "10:02",
+    details: "Original SATA drive mounted via hardware write-blocking bridge. Physical write-protection verified."
+  },
+  {
+    event: "Hash generated",
+    person: "Analyst A (Inspector R. Verma)",
+    role: "First Responder / Acquisition Specialist",
+    time: "10:05",
+    details: "Dual SHA-256 and MD5 baselines calculated directly from raw drive sectors and stored in secure ledger."
+  },
+  {
+    event: "Image created",
+    person: "Analyst A (Inspector R. Verma)",
+    role: "First Responder / Acquisition Specialist",
+    time: "10:10",
+    details: "Bit-stream forensic working image (.dd/.raw) acquired. Master physical drive sealed in evidence vault."
+  },
+  {
+    event: "Analysis started",
+    person: "Analyst B (Dr. S. Kulkarni)",
+    role: "Senior Forensic Video Examiner",
+    time: "11:15",
+    details: "Mounted working image read-only. Identified proprietary Hikvision HIK-FS filesystem and extracted 4 channels."
+  },
+  {
+    event: "Video recovered",
+    person: "Analyst B (Dr. S. Kulkarni)",
+    role: "Senior Forensic Video Examiner",
+    time: "11:40",
+    details: "Carved unallocated clusters; recovered deleted fragment REC-000091 using H.264 NALU byte signatures."
+  },
+  {
+    event: "Report generated",
+    person: "Analyst B (Dr. S. Kulkarni)",
+    role: "Senior Forensic Video Examiner",
+    time: "12:20",
+    details: "Section 65B Indian Evidence Act compliant PDF judicial report exported with cryptographic hash seals."
+  }
+];
+
+// ===========================================================================
+// ACCURACY & VALIDATION MODULE (Dynamic Empirical Metrics)
+// ===========================================================================
+export const mockValidationMetrics = {
+  case_id: "CASE-2026-001",
+  recovery_rate: {
+    total_fragments_analyzed: 14,
+    valid_fragments: 11,
+    recovered_files: 8,
+    deleted_recovered_files: 6,
+    unrecoverable_files: 3,
+    recovery_rate_percent: 78.57
+  },
+  timestamp_accuracy: {
+    total_samples_compared: 4,
+    average_timestamp_error_sec: 2.35,
+    samples: [
+      {
+        camera_id: "cam-01",
+        camera_name: "Camera 01 (Main Gate)",
+        original_timestamp: "2026-08-22 22:15:00",
+        extracted_timestamp: "2026-08-22 22:15:02",
+        error_seconds: 2.0
+      },
+      {
+        camera_id: "cam-02",
+        camera_name: "Camera 02 (Loading Bay 4)",
+        original_timestamp: "2026-08-22 22:18:10",
+        extracted_timestamp: "2026-08-22 22:18:13",
+        error_seconds: 3.0
+      },
+      {
+        camera_id: "cam-03",
+        camera_name: "Camera 03 (Perimeter Fence)",
+        original_timestamp: "2026-08-22 22:20:00",
+        extracted_timestamp: "2026-08-22 22:20:01",
+        error_seconds: 1.0
+      },
+      {
+        camera_id: "cam-04",
+        camera_name: "Camera 04 (Cash Vault)",
+        original_timestamp: "2026-08-22 22:25:30",
+        extracted_timestamp: "2026-08-22 22:25:34",
+        error_seconds: 4.0
+      }
+    ]
+  },
+  ai_validation: {
+    has_ground_truth: false,
+    precision_percent: null,
+    recall_percent: null,
+    f1_score_percent: null,
+    detection_count: 24,
+    average_confidence: 0.91,
+    status_message: "Validation dataset not provided. Ground-truth bounding box annotations are required to calculate empirical Precision, Recall, and F1-Score."
+  },
+  timestamp: "2026-09-13T22:00:00Z"
+};
+
+

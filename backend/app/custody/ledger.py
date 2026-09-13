@@ -1,6 +1,6 @@
 import hashlib
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 from backend.app.models.forensic_models import ChainOfCustody
@@ -38,6 +38,11 @@ def calculate_block_hash(
     raw = f"{previous_hash}::{canonical_json}"
     return hashlib.sha256(raw.encode('utf-8')).hexdigest()
 
+def _normalize_dt(dt: datetime) -> str:
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt.isoformat()
+
 def append_ledger_event(
     db: Session,
     case_id: str,
@@ -65,9 +70,14 @@ def append_ledger_event(
         block_number = last_block.block_number + 1
         previous_hash = last_block.current_hash
 
-    ts = custom_timestamp or datetime.utcnow()
-    ts_str = ts.isoformat()
-    event_id = f"AUDIT-BLK-{block_number:05d}"
+    raw_ts = custom_timestamp or datetime.now(timezone.utc)
+    # Store naive UTC for consistent SQLite and PostgreSQL roundtrips
+    if raw_ts.tzinfo is not None:
+        ts = raw_ts.astimezone(timezone.utc).replace(tzinfo=None)
+    else:
+        ts = raw_ts
+    ts_str = _normalize_dt(ts)
+    event_id = f"AUDIT-{case_id[:8]}-BLK-{block_number:05d}"
 
     current_hash = calculate_block_hash(
         block_number=block_number,
@@ -141,7 +151,7 @@ def verify_case_chain(db: Session, case_id: str) -> Dict[str, Any]:
         expected_hash = calculate_block_hash(
             block_number=block.block_number,
             previous_hash=block.previous_hash,
-            timestamp_str=block.timestamp.isoformat(),
+            timestamp_str=_normalize_dt(block.timestamp),
             actor_name=block.actor_name,
             actor_role=block.actor_role,
             action=block.action,

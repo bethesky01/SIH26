@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional, Any, Dict
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 # User Schemas
 class UserBase(BaseModel):
@@ -16,8 +16,7 @@ class UserCreate(UserBase):
 class UserResponse(UserBase):
     id: str
     created_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Case Schemas
 class CaseBase(BaseModel):
@@ -40,8 +39,7 @@ class CaseResponse(CaseBase):
     updated_at: datetime
     devices_count: Optional[int] = 0
     evidence_count: Optional[int] = 0
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Camera Schemas
 class CameraBase(BaseModel):
@@ -60,8 +58,7 @@ class CameraResponse(CameraBase):
     id: str
     device_id: str
     created_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Device Schemas
 class DeviceBase(BaseModel):
@@ -84,8 +81,7 @@ class DeviceResponse(DeviceBase):
     case_id: str
     cameras: List[CameraResponse] = []
     created_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Evidence Schemas
 class EvidenceBase(BaseModel):
@@ -121,8 +117,7 @@ class EvidenceResponse(EvidenceBase):
     camera_id: Optional[str] = None
     forensic_copy_path: Optional[str] = None
     created_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Detection Schemas
 class DetectionBase(BaseModel):
@@ -143,8 +138,7 @@ class DetectionResponse(DetectionBase):
     evidence_id: str
     camera_id: Optional[str] = None
     created_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Recovery Record Schemas
 class RecoveryRecordBase(BaseModel):
@@ -161,8 +155,7 @@ class RecoveryRecordResponse(RecoveryRecordBase):
     evidence_id: str
     camera_id: Optional[str] = None
     created_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Timeline Event Schemas
 class TimelineEventBase(BaseModel):
@@ -181,8 +174,7 @@ class TimelineEventResponse(TimelineEventBase):
     evidence_id: Optional[str] = None
     camera_id: Optional[str] = None
     created_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Chain of Custody / Ledger Schemas
 class ChainOfCustodyBase(BaseModel):
@@ -201,8 +193,7 @@ class ChainOfCustodyResponse(ChainOfCustodyBase):
     id: str
     case_id: str
     evidence_id: Optional[str] = None
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ChainVerificationResult(BaseModel):
     is_valid: bool
@@ -250,8 +241,7 @@ class ReportResponse(BaseModel):
     hash_sha256: str
     summary_findings: Optional[str] = None
     created_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Natural Language Search Query
 class EventSearchRequest(BaseModel):
@@ -267,3 +257,49 @@ class EventSearchRequest(BaseModel):
 class ClockOffsetUpdate(BaseModel):
     camera_id: str
     clock_offset_seconds: int
+
+# Validation & Accuracy Schemas
+class TimestampComparisonItem(BaseModel):
+    camera_id: Optional[str] = None
+    camera_name: str
+    original_timestamp: str
+    extracted_timestamp: str
+    error_seconds: float
+
+class RecoveryRateMetrics(BaseModel):
+    total_fragments_analyzed: int
+    valid_fragments: int
+    recovered_files: int
+    deleted_recovered_files: int
+    unrecoverable_files: int
+    recovery_rate_percent: float
+
+class TimestampAccuracyMetrics(BaseModel):
+    total_samples_compared: int
+    average_timestamp_error_sec: float
+    samples: List[TimestampComparisonItem]
+
+class AIValidationMetrics(BaseModel):
+    has_ground_truth: bool
+    precision_percent: Optional[float] = None
+    recall_percent: Optional[float] = None
+    f1_score_percent: Optional[float] = None
+    detection_count: int
+    average_confidence: float
+    status_message: str
+
+class ValidationMetricsResponse(BaseModel):
+    case_id: str
+    recovery_rate: RecoveryRateMetrics
+    timestamp_accuracy: TimestampAccuracyMetrics
+    ai_validation: AIValidationMetrics
+    timestamp: datetime
+
+# Live Stream / RTSP Ingest Schema
+class LiveStreamIngestRequest(BaseModel):
+    case_id: str
+    stream_url: str
+    stream_name: str
+    camera_name: Optional[str] = "RTSP Camera Feed"
+    vendor: Optional[str] = "Generic RTSP"
+    capture_duration_seconds: Optional[float] = 10.0
