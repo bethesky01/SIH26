@@ -287,8 +287,50 @@ function handleMockRequest(endpoint, options = {}) {
       status: 'COMPLETE',
       model: 'YOLOv8-Surveillance-Forensics-v2',
       frames_processed: 375,
-      detections_count: 5,
-      categories: ['Person', 'Vehicle', 'Face', 'Motion'],
+      detections_count: mockDetections.length,
+      categories: ['Person', 'Vehicle', 'Object', 'Face', 'Motion'],
+      detections: mockDetections,
+    };
+  }
+
+  if (path === '/ai/analyze-video-file') {
+    // Check if filename suggests corrupted stream
+    const isCorrupted = (options.body && options.body.get && (
+      (options.body.get('file')?.name || '').toLowerCase().includes('corrupt') ||
+      (options.body.get('file')?.name || '').toLowerCase().endsWith('.raw') ||
+      (options.body.get('file')?.name || '').toLowerCase().endsWith('.dd') ||
+      (options.body.get('file')?.name || '').toLowerCase().endsWith('.bin') ||
+      (options.body.get('file')?.name || '').toLowerCase().endsWith('.img')
+    ));
+
+    if (isCorrupted) {
+      return {
+        status: 'SUCCESS',
+        is_corrupted: true,
+        filename: options.body?.get?.('file')?.name || 'corrupted_sample.raw',
+        file_size: 524288,
+        hash_sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+        hash_md5: 'e1f2a3b4c5d6e7f8091a2b3c4d5e6f7a',
+        corruption_type: 'Corrupted Video Bitstream (Header Unallocated / Index Broken)',
+        message: 'Corrupted file detected. Low-level sector carving reconstructed unallocated video frames.',
+        fragments_found: liveRecovery.length,
+        fragments: liveRecovery,
+        recommendation: 'Direct extraction available in Recovery Carver module.'
+      };
+    }
+
+    const uploadedFileName = options.body?.get?.('file')?.name || 'user_cctv_footage.mp4';
+    return {
+      status: 'SUCCESS',
+      is_corrupted: false,
+      filename: uploadedFileName,
+      file_size: 2048576,
+      duration_seconds: 16.0,
+      fps: 25.0,
+      hash_sha256: '4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a',
+      hash_md5: '8b1a9953c4611296a827abf8c47804d7',
+      detections_count: mockDetections.length,
+      categories: ['Person', 'Vehicle', 'Object', 'Motion', 'Face'],
       detections: mockDetections,
     };
   }
@@ -478,6 +520,7 @@ export const api = {
   // AI & Computer Vision
   getDetections: (evidenceId) => request(`/ai/detections${evidenceId ? `?evidence_id=${encodeURIComponent(evidenceId)}` : ''}`),
   analyzeEvidenceAI: (evidenceId) => request(`/ai/analyze/${encodeURIComponent(evidenceId)}`, { method: 'POST' }),
+  analyzeVideoFile: (formData) => request('/ai/analyze-video-file', { method: 'POST', body: formData }),
   searchAIEvents: (queryPayload) => request('/ai/search', { method: 'POST', body: JSON.stringify(queryPayload) }),
 
   // Accuracy & Validation Module

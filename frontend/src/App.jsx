@@ -191,6 +191,7 @@ export default function App() {
               evidenceList={evidenceList}
               selectedEvidenceId={selectedEvidenceId}
               onSelectEvidence={setSelectedEvidenceId}
+              onNavigate={setActiveTab}
             />
           )}
 

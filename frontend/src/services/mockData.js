@@ -271,6 +271,21 @@ export const mockDetections = [
     forensic_notes: "Two-wheeler commuter bike passing through gate boundary."
   },
   {
+    id: "det-03b",
+    evidence_id: "9e3aa2a1-bfa9-4f58-809c-11d78b9eda79",
+    timestamp_sec: 9.4,
+    label: "Object: Abandoned Backpack (89%)",
+    category: "object",
+    confidence: 0.89,
+    bbox_x: 0.44,
+    bbox_y: 0.60,
+    bbox_w: 0.12,
+    bbox_h: 0.16,
+    cctv_time: "10:31:49",
+    normalized_time: "10:31:49",
+    forensic_notes: "Stationary unattended luggage anomaly detected near perimeter curb."
+  },
+  {
     id: "det-04",
     evidence_id: "9e3aa2a1-bfa9-4f58-809c-11d78b9eda79",
     timestamp_sec: 10.5,

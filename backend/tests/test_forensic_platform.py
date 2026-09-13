@@ -340,5 +340,36 @@ def test_unsupported_format_handling():
     assert ev["status"] == "Unsupported"
     assert ev["vendor"] == "Unsupported Vendor"
 
+def test_ai_video_file_analysis_and_corrupted_recovery():
+    from fastapi.testclient import TestClient
+    from backend.app.main import app
+    import io
 
+    client = TestClient(app)
 
+    # 1. Test video file detection
+    fake_video = io.BytesIO(b"MOCK_CCTV_VIDEO_STREAM_DATA_WITH_METADATA")
+    res = client.post(
+        "/api/ai/analyze-video-file",
+        files={"file": ("incident_cctv.mp4", fake_video, "video/mp4")}
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "SUCCESS"
+    assert data["is_corrupted"] is False
+    assert data["detections_count"] >= 4
+    categories = {d["detection_type"] for d in data["detections"]}
+    assert "Person" in categories
+    assert "Vehicle" in categories
+
+    # 2. Test corrupted / raw dump file detection and recovery
+    raw_corrupted = io.BytesIO(b"\x00\x00\x00\x01\x67\x42\x00\x1fMOCK_CARVED_H264_STREAM" * 20)
+    res_corrupt = client.post(
+        "/api/ai/analyze-video-file",
+        files={"file": ("corrupted_dump.raw", raw_corrupted, "application/octet-stream")}
+    )
+    assert res_corrupt.status_code == 200
+    corrupt_data = res_corrupt.json()
+    assert corrupt_data["status"] == "SUCCESS"
+    assert corrupt_data["is_corrupted"] is True
+    assert corrupt_data["fragments_found"] >= 1

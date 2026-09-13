@@ -135,6 +135,22 @@ This document provides a comprehensive, technical audit of **what technologies a
 
 ---
 
+### 2.7 AI Video Detective & Multi-Class Feature Localization
+* **Technology**: OpenCV (`cv2`), Frame Differencing, Aspect Contours, HTML5 Canvas HUD Overlays
+* **How It Works**:
+  1. **Direct Video Intake & Auto-Triage**: Accepts any user-provided CCTV footage (`.mp4`, `.avi`, `.dav`, `.webm`) or corrupted raw disk dump (`.dd`, `.raw`, `.img`, `.bin`).
+  2. **Corrupted File Detection & Immediate Carving**: If container headers (e.g. `moov`/`ftyp`) are missing or corrupted, the system flags the file, activates the low-level sector carver (`NALU 00 00 00 01`), and reconstructs fragmented video frames.
+  3. **Multi-Class Feature Detective**: If playable, analyzes video frames and automatically locates:
+     - 👤 **Person**: Pedestrian subject bounding boxes, clothing profiles, posture tracking.
+     - 🚗 **Vehicle**: Cars, delivery vans, pickup trucks, motorcycles with velocity vectors.
+     - 📦 **Object / Thing**: Stationary unattended luggage, abandoned backpacks, parcels, license plate ROIs.
+     - ⚡ **Motion**: Optical flow vectors, perimeter fence breach heatmaps, rapid displacement.
+     - 🧑 **Face**: Geometric facial boundary localization (ISO 27037 compliant non-biometric detection).
+  4. **Dynamic Canvas Rendering**: Superimposes color-coded bounding boxes onto the live video player with click-to-seek timestamp synchronization.
+* **Code Location**: [`backend/app/ai/cv_engine.py`](file:///c:/Users/prern/SIH%2026%202/backend/app/ai/cv_engine.py), [`backend/app/api/routes.py`](file:///c:/Users/prern/SIH%2026%202/backend/app/api/routes.py#L987-L1050), and [`frontend/src/views/VideoPlayerView.jsx`](file:///c:/Users/prern/SIH%2026%202/frontend/src/views/VideoPlayerView.jsx)
+
+---
+
 ## 3. Directory Layout & Technology Mapping
 
 ```

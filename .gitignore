@@ -33,6 +33,7 @@ storage/evidence/original/*
 !storage/evidence/original/.gitkeep
 storage/evidence/forensic_copies/*
 !storage/evidence/forensic_copies/.gitkeep
+storage/evidence/temp/*
 storage/recovered/*
 !storage/recovered/.gitkeep
 storage/reports/*
