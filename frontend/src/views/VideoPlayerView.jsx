@@ -556,7 +556,7 @@ export default function VideoPlayerView({
             </div>
           </div>
 
-          {/* Legal / Ethical Distinction for Hackathon Judges */}
+          {/* Legal / Ethical Evidentiary Protocol */}
           <div
             style={{
               background: 'rgba(16, 185, 129, 0.05)',
@@ -566,7 +566,7 @@ export default function VideoPlayerView({
             }}
           >
             <div style={{ fontWeight: 700, fontSize: '0.84rem', color: 'var(--emerald-status)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <ShieldCheck size={16} /> Crucial Hackathon Distinction: Face Detection vs. Face Recognition
+              <ShieldCheck size={16} /> Evidentiary Standard: Geometric Face Detection vs. Biometric Identification
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
               <div>

@@ -393,7 +393,7 @@ and ISO/IEC 27037 Digital Evidence Admissibility Standard.
                   borderColor: reportTemplateMode === 'prompt' ? 'var(--cyan-primary)' : 'transparent',
                 }}
                 onClick={() => setReportTemplateMode('prompt')}
-                title="Exact Hackathon Prompt Format"
+                title="Standard Forensic Template"
               >
                 Template (XXXX)
               </button>
@@ -434,7 +434,7 @@ and ISO/IEC 27037 Digital Evidence Admissibility Standard.
           </div>
         </div>
 
-        {/* Transformation Hero Callout */}
+        {/* Judicial Admissibility Callout */}
         <div
           style={{
             background: 'linear-gradient(90deg, rgba(0, 229, 255, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%)',
@@ -463,20 +463,20 @@ and ISO/IEC 27037 Digital Evidence Admissibility Standard.
                 flexShrink: 0,
               }}
             >
-              <Sparkles size={22} color="var(--cyan-primary)" />
+              <ShieldCheck size={22} color="var(--cyan-primary)" />
             </div>
             <div>
               <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--cyan-primary)', letterSpacing: 1, textTransform: 'uppercase' }}>
-                Key Takeaway for Hackathon Judges
+                Evidentiary Admissibility Certification
               </div>
-              <div style={{ fontSize: '1.08rem', fontWeight: 800, color: '#ffffff', marginTop: 2 }}>
-                This is what turns your project from:
-                <span style={{ color: '#f87171', background: 'rgba(239, 68, 68, 0.15)', padding: '2px 8px', borderRadius: 4, margin: '0 6px', textDecoration: 'line-through' }}>
-                  &quot;CCTV video player&quot;
+              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff', marginTop: 2 }}>
+                Official Judicial Evidence Copy:
+                <span style={{ color: '#38bdf8', background: 'rgba(56, 189, 248, 0.15)', padding: '2px 8px', borderRadius: 4, margin: '0 6px' }}>
+                  Section 65B Indian Evidence Act
                 </span>
-                into:
+                &amp;
                 <span style={{ color: '#10b981', background: 'rgba(16, 185, 129, 0.15)', padding: '2px 8px', borderRadius: 4, marginLeft: 6 }}>
-                  &quot;Forensic evidence platform&quot;
+                  ISO/IEC 27037 Standard
                 </span>
               </div>
             </div>

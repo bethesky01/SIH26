@@ -30,6 +30,7 @@ export default function EvidenceView({
   const [acquisitionProgress, setAcquisitionProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState(null);
   const [origTimestamp, setOrigTimestamp] = useState('2026-08-22 22:15:00');
+  const [vendorOverride, setVendorOverride] = useState('');
   const [message, setMessage] = useState(null);
 
   // RTSP Stream Form State
@@ -412,6 +413,31 @@ export default function EvidenceView({
                   {isUploading ? 'Acquiring & Generating Hashes...' : 'Ingest, Lock & Dual Hash'}
                 </button>
               </form>
+
+              {/* Damaged / Corrupted Footage Shortcut */}
+              <div
+                style={{
+                  marginTop: 6,
+                  padding: '10px 14px',
+                  background: 'rgba(245, 158, 11, 0.06)',
+                  border: '1px solid rgba(245, 158, 11, 0.25)',
+                  borderRadius: 'var(--radius-md)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                  <strong style={{ color: 'var(--amber-status)' }}>Clip Corrupted or Deleted?</strong> Parse unallocated sectors & recover missing headers.
+                </div>
+                <button
+                  className="btn btn-secondary"
+                  style={{ fontSize: '0.72rem', padding: '4px 10px', color: 'var(--amber-status)', borderColor: 'rgba(245, 158, 11, 0.4)' }}
+                  onClick={() => onNavigate && onNavigate('recovery')}
+                >
+                  Open Recovery Carver &rarr;
+                </button>
+              </div>
             </div>
           )}
 
