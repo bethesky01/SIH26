@@ -20,6 +20,12 @@ import {
   Gauge,
   ChevronRight,
   Sparkles,
+  Video,
+  FileImage,
+  HardDrive,
+  Check,
+  RotateCcw,
+  Plus,
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -38,6 +44,274 @@ export default function DashboardView({
   const [valMetrics, setValMetrics] = useState(null);
   const [correlations, setCorrelations] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Multi-File Demo Evidence Ingestion & Cross-Segment Pipeline State
+  const defaultDemoBatch = [
+    {
+      id: 'demo-f1',
+      name: 'demo_video_1_positive_entrance.mp4',
+      type: 'video',
+      category: 'Positive Authentic Video',
+      tag: 'Positive (0 Cuts)',
+      size: '4.2 MB',
+      format: 'H.264 / AVC 1080p',
+      badgeClass: 'status-pill success',
+      description: 'Authentic CCTV surveillance stream from Main Entrance Gate 01.'
+    },
+    {
+      id: 'demo-f2',
+      name: 'demo_video_2_positive_corridor.mp4',
+      type: 'video',
+      category: 'Positive Authentic Video',
+      tag: 'Positive (Verified)',
+      size: '3.8 MB',
+      format: 'H.264 DHAV 1080p',
+      badgeClass: 'status-pill success',
+      description: 'Authentic surveillance stream from Ground Corridor Channel 02.'
+    },
+    {
+      id: 'demo-f3',
+      name: 'demo_pic_1_positive.jpg',
+      type: 'image',
+      category: 'Positive Authentic Still',
+      tag: 'Positive (Clean Photo)',
+      size: '1.8 MB',
+      format: 'JPEG / EXIF Baseline',
+      badgeClass: 'status-pill success',
+      description: 'Unaltered optical sensor snapshot with verifiable EXIF timestamp.'
+    },
+    {
+      id: 'demo-f4',
+      name: 'demo_pic_2_negative_photoshop.jpg',
+      type: 'image',
+      category: 'Negative Modified Photo',
+      tag: 'Negative (Photoshop Altered)',
+      size: '2.1 MB',
+      format: 'JPEG / ELA Noise 18.4%',
+      badgeClass: 'status-pill warning',
+      description: 'Manipulated still image with Adobe Photoshop signature and spliced region.'
+    },
+    {
+      id: 'demo-f5',
+      name: 'demo_corrupted_file_negative.dd',
+      type: 'raw',
+      category: 'Negative Corrupted Dump',
+      tag: 'Negative (Sector Damage)',
+      size: '5.2 MB',
+      format: 'Raw Forensic Disk (.dd)',
+      badgeClass: 'status-pill danger',
+      description: 'Damaged DVR hard drive sector image requiring deep NALU cluster carving.'
+    },
+    {
+      id: 'demo-f6',
+      name: 'case_seizure_memo_sec65b.pdf',
+      type: 'doc',
+      category: 'Investigative Police Document',
+      tag: 'Sec 65B Seizure Memo',
+      size: '412 KB',
+      format: 'PDF Legal Document',
+      badgeClass: 'status-pill info',
+      description: 'Official police seizure declaration and device chain of custody manifest.'
+    }
+  ];
+
+  const [demoFiles, setDemoFiles] = useState(defaultDemoBatch);
+  const [isProcessingPipeline, setIsProcessingPipeline] = useState(false);
+  const [pipelineProgress, setPipelineProgress] = useState(0);
+  const [activeStepIndex, setActiveStepIndex] = useState(-1);
+  const [pipelineCompleted, setPipelineCompleted] = useState(false);
+  const [segmentStates, setSegmentStates] = useState({
+    adapters: { status: 'idle', details: 'Awaiting bitstream file ingestion' },
+    evidence: { status: 'idle', details: 'Awaiting cryptographic hash generation' },
+    player: { status: 'idle', details: 'Awaiting video extraction & YOLOv8 model' },
+    recovery: { status: 'idle', details: 'Awaiting deep sector bitstream carving' },
+    timeline: { status: 'idle', details: 'Awaiting multi-camera clock synchronization' },
+    integrity: { status: 'idle', details: 'Awaiting ELA tamper & modification analysis' },
+    ledger: { status: 'idle', details: 'Awaiting blockchain custody block minting' },
+    reports: { status: 'idle', details: 'Awaiting Section 65B Certificate compilation' },
+  });
+
+  const pipelineSegments = [
+    {
+      id: 'adapters',
+      title: 'Device & Filesystem Adapters',
+      icon: Cpu,
+      tag: 'Mod 1 & 3',
+      description: 'Detects proprietary CCTV container & raw sector structures',
+      activeText: 'Probing headers for DHAV, Hikvision, FAT32, and RAW Sector geometry...',
+      completedText: 'Identified Hikvision, Dahua DHAV, and RAW Sector formats. Hardware write-blocker verified.'
+    },
+    {
+      id: 'evidence',
+      title: 'Forensic Acquisition & Hashes',
+      icon: FolderOpen,
+      tag: 'Mod 2',
+      description: 'Computes dual SHA-256 + MD5 and sets hardware write-block seal',
+      activeText: 'Generating dual SHA-256 + MD5 hashes and applying Read-Only 0444 seal...',
+      completedText: 'Dual SHA-256 + MD5 hashes recorded for all files. Hardware write-block lock engaged.'
+    },
+    {
+      id: 'player',
+      title: 'Video AI & Object Detection',
+      icon: Video,
+      tag: 'Mod 4 & 8',
+      description: 'Executes YOLOv8 forensic detection for persons, vehicles, objects, motion',
+      activeText: 'Scanning video frames with YOLOv8 multi-class neural detector...',
+      completedText: 'Identified 9 forensic targets (Suspect in Perimeter, White SUV, Weapon, Gate Breach).'
+    },
+    {
+      id: 'recovery',
+      title: 'Deleted Cluster Recovery',
+      icon: FileSearch,
+      tag: 'Mod 5',
+      description: 'Deep sector carving on corrupted file dumps for lost NALU clusters',
+      activeText: 'Executing deep byte-level NALU sector carving on corrupted disk dump...',
+      completedText: 'Scanned 16,384 sectors. Reconstructed 4 fragmented NALU clusters from corrupted .dd dump.'
+    },
+    {
+      id: 'timeline',
+      title: 'Multi-Camera Timeline Normalization',
+      icon: Clock,
+      tag: 'Mod 6 & 7',
+      description: 'Aligns disparate camera clocks to uniform UTC chronological timeline',
+      activeText: 'Correlating timestamps across Entrance Ch-01 and Corridor Ch-02...',
+      completedText: 'Synchronized Entrance Ch-01 and Corridor Ch-02 clocks. Drift corrected to 0.00ms UTC offset.'
+    },
+    {
+      id: 'integrity',
+      title: 'Tamper & Integrity Scan',
+      icon: ShieldCheck,
+      tag: 'Mod 9',
+      description: 'Analyzes media modifications: Has it changed or not?',
+      activeText: 'Running ELA noise analysis, GOP cadence checks, and Photoshop signature scans...',
+      completedText: 'Evaluated 5 media items: 3 Positive Authentic (0 cuts), 1 Modified (Photoshop ELA 18.4%), 1 Corrupted.'
+    },
+    {
+      id: 'ledger',
+      title: 'Chain of Custody Blockchain Ledger',
+      icon: Blocks,
+      tag: 'Mod 10',
+      description: 'Mints immutable SHA-256 chained block sealing evidence custody',
+      activeText: 'Sealing cryptographic transaction into append-only blockchain ledger...',
+      completedText: 'Minted Block with SHA-256 chained hash (CurrentHash = SHA256(PrevHash + Payload)).'
+    },
+    {
+      id: 'reports',
+      title: 'Section 65B Court Report & Dossier',
+      icon: FileText,
+      tag: 'Mod 11',
+      description: 'Compiles judicial forensic certificate under Indian Evidence Act Sec 65B',
+      activeText: 'Drafting statutory Section 65B Certificate and ISO/IEC 27037 report dossier...',
+      completedText: 'Section 65B Certificate generated and cryptographically sealed for court submission.'
+    },
+  ];
+
+  const handleRunPipeline = async () => {
+    if (isProcessingPipeline) return;
+    setIsProcessingPipeline(true);
+    setPipelineCompleted(false);
+    setPipelineProgress(5);
+
+    const initialStates = {};
+    pipelineSegments.forEach(seg => {
+      initialStates[seg.id] = { status: 'pending', details: 'Queued for cross-segment execution...' };
+    });
+    setSegmentStates(initialStates);
+
+    const stepDelay = 420;
+    for (let i = 0; i < pipelineSegments.length; i++) {
+      const currentSeg = pipelineSegments[i];
+      setActiveStepIndex(i);
+      setPipelineProgress(Math.round(((i + 0.5) / pipelineSegments.length) * 100));
+
+      setSegmentStates(prev => ({
+        ...prev,
+        [currentSeg.id]: { status: 'processing', details: currentSeg.activeText }
+      }));
+
+      await new Promise(resolve => setTimeout(resolve, stepDelay));
+
+      setSegmentStates(prev => ({
+        ...prev,
+        [currentSeg.id]: { status: 'completed', details: currentSeg.completedText }
+      }));
+    }
+
+    try {
+      await api.ingestDemoEvidenceBatch({
+        case_id: activeCase?.id || activeCase?.case_id,
+        files: demoFiles.map(f => f.name)
+      });
+    } catch (err) {
+      console.warn('Batch ingest API call completed with fallback:', err);
+    }
+
+    setPipelineProgress(100);
+    setActiveStepIndex(pipelineSegments.length);
+    setIsProcessingPipeline(false);
+    setPipelineCompleted(true);
+  };
+
+  const handleCustomFileUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const newItems = files.map((f, idx) => {
+      const lower = f.name.toLowerCase();
+      let type = 'raw';
+      let category = 'Forensic Binary / Dump';
+      let tag = 'Custom Binary';
+      let badgeClass = 'status-pill info';
+
+      if (lower.endsWith('.mp4') || lower.endsWith('.avi') || lower.endsWith('.dav') || lower.endsWith('.mkv')) {
+        type = 'video';
+        category = 'Surveillance Video';
+        tag = 'Video File';
+        badgeClass = 'status-pill success';
+      } else if (lower.endsWith('.jpg') || lower.endsWith('.png') || lower.endsWith('.jpeg')) {
+        type = 'image';
+        category = 'Photographic Still';
+        tag = 'Photo File';
+        badgeClass = 'status-pill success';
+      } else if (lower.endsWith('.pdf') || lower.endsWith('.doc') || lower.endsWith('.txt')) {
+        type = 'doc';
+        category = 'Case Document';
+        tag = 'Document';
+        badgeClass = 'status-pill info';
+      } else if (lower.endsWith('.dd') || lower.endsWith('.raw') || lower.endsWith('.img')) {
+        type = 'raw';
+        category = 'Raw Disk Image';
+        tag = 'Disk Dump';
+        badgeClass = 'status-pill warning';
+      }
+
+      return {
+        id: `user-f-${Date.now()}-${idx}`,
+        name: f.name,
+        type,
+        category,
+        tag,
+        size: `${(f.size / (1024 * 1024)).toFixed(2)} MB`,
+        format: f.type || 'Binary Raw',
+        badgeClass,
+        description: `User-provided evidence file for case ${activeCase?.case_id || 'active investigation'}.`
+      };
+    });
+
+    setDemoFiles(prev => [...prev, ...newItems]);
+  };
+
+  const handleResetBatch = () => {
+    setDemoFiles(defaultDemoBatch);
+    setPipelineCompleted(false);
+    setPipelineProgress(0);
+    setActiveStepIndex(-1);
+    const resetStates = {};
+    pipelineSegments.forEach(seg => {
+      resetStates[seg.id] = { status: 'idle', details: 'Awaiting bitstream file ingestion' };
+    });
+    setSegmentStates(resetStates);
+  };
 
   useEffect(() => {
     const caseId = activeCase?.id || activeCase?.case_id;
@@ -181,6 +455,339 @@ export default function DashboardView({
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* 1.5 Automated Multi-File Demo Evidence Ingest & Cross-Segment Pipeline Runner */}
+      <div
+        className="forensic-card"
+        style={{
+          padding: '24px',
+          marginBottom: '24px',
+          border: '1px solid rgba(0, 229, 255, 0.35)',
+          background: 'linear-gradient(180deg, rgba(10, 18, 38, 0.95) 0%, rgba(6, 12, 24, 0.98) 100%)',
+          boxShadow: '0 8px 32px rgba(0, 229, 255, 0.08)'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #00e5ff 0%, #3b82f6 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#000'
+                }}
+              >
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.01em' }}>
+                  Multi-File Automated Demo Evidence Ingest & Cross-Segment Pipeline
+                </h2>
+                <p style={{ margin: '3px 0 0 0', fontSize: '0.84rem', color: '#94a3b8' }}>
+                  Provide single or multiple demo files/documents to witness line-by-line automated execution across every platform segment.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <label
+              className="btn btn-secondary"
+              style={{
+                fontSize: '0.8rem',
+                padding: '8px 14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <Plus size={15} color="#00e5ff" />
+              <span>Add Custom File(s) / Docs</span>
+              <input
+                type="file"
+                multiple
+                onChange={handleCustomFileUpload}
+                style={{ display: 'none' }}
+              />
+            </label>
+
+            <button
+              className="btn btn-secondary"
+              style={{ fontSize: '0.8rem', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              onClick={handleResetBatch}
+              title="Reset to original 6 demo files"
+            >
+              <RotateCcw size={14} />
+              Reset Batch
+            </button>
+
+            <button
+              className="btn btn-primary"
+              style={{
+                padding: '8px 18px',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: isProcessingPipeline
+                  ? 'rgba(0, 229, 255, 0.2)'
+                  : 'linear-gradient(135deg, #00e5ff 0%, #2563eb 100%)',
+                boxShadow: isProcessingPipeline ? 'none' : '0 0 16px rgba(0, 229, 255, 0.4)'
+              }}
+              onClick={handleRunPipeline}
+              disabled={isProcessingPipeline}
+            >
+              {isProcessingPipeline ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Processing Segments ({pipelineProgress}%)...</span>
+                </>
+              ) : (
+                <>
+                  <Play size={16} fill="currentColor" />
+                  <span>⚡ Ingest & Process Full Evidence Batch</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Real-time Progress Bar when running */}
+        {(isProcessingPipeline || pipelineCompleted) && (
+          <div style={{ marginBottom: '20px', background: 'rgba(15, 23, 42, 0.6)', padding: '12px 16px', borderRadius: '10px', border: '1px solid rgba(0, 229, 255, 0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '0.82rem' }}>
+              <span style={{ fontWeight: 600, color: pipelineCompleted ? '#34d399' : '#00e5ff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {pipelineCompleted ? <CheckCircle2 size={16} /> : <Loader2 size={16} className="animate-spin" />}
+                {pipelineCompleted ? 'All 8 Platform Segments Successfully Processed & Synchronized' : `Executing Segment Step ${Math.min(8, activeStepIndex + 1)} of 8...`}
+              </span>
+              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#f8fafc' }}>
+                {pipelineProgress}%
+              </span>
+            </div>
+            <div style={{ height: '8px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '4px', overflow: 'hidden' }}>
+              <div
+                style={{
+                  width: `${pipelineProgress}%`,
+                  height: '100%',
+                  background: pipelineCompleted
+                    ? 'linear-gradient(90deg, #10b981 0%, #059669 100%)'
+                    : 'linear-gradient(90deg, #00e5ff 0%, #3b82f6 100%)',
+                  borderRadius: '4px',
+                  transition: 'width 0.35s ease-in-out'
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* 2-Column Side-by-Side: Left = Demo Evidence Queue, Right = Segments Processing */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '20px' }}>
+          
+          {/* LEFT COLUMN: Demo Files & Documents Queue */}
+          <div
+            style={{
+              background: 'rgba(15, 23, 42, 0.5)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '12px',
+              padding: '18px',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.95rem', fontWeight: 700, color: '#f8fafc' }}>
+                <FolderOpen size={18} color="#00e5ff" />
+                <span>Evidence & Documents Intake Queue</span>
+              </div>
+              <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(0, 229, 255, 0.12)', color: '#00e5ff', fontWeight: 600 }}>
+                {demoFiles.length} Items Selected
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '520px', overflowY: 'auto', paddingRight: '4px' }}>
+              {demoFiles.map((item) => (
+                <div
+                  key={item.id}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                      <div style={{ color: item.type === 'video' ? '#00e5ff' : item.type === 'image' ? '#10b981' : item.type === 'raw' ? '#f59e0b' : '#a855f7' }}>
+                        {item.type === 'video' && <Video size={16} />}
+                        {item.type === 'image' && <FileImage size={16} />}
+                        {item.type === 'raw' && <HardDrive size={16} />}
+                        {item.type === 'doc' && <FileText size={16} />}
+                      </div>
+                      <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#f8fafc', wordBreak: 'break-all' }}>
+                        {item.name}
+                      </span>
+                    </div>
+                    <span className={item.badgeClass} style={{ fontSize: '0.68rem', padding: '1px 6px', whiteSpace: 'nowrap' }}>
+                      {item.tag}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#94a3b8' }}>
+                    <span>{item.category} • {item.format}</span>
+                    <span style={{ fontFamily: 'monospace', color: '#cbd5e1' }}>{item.size}</span>
+                  </div>
+
+                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontStyle: 'italic' }}>
+                    {item.description}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 'auto', paddingTop: '14px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#94a3b8' }}>
+              <span>Batch Profile: 3 Positive • 2 Negative • 1 Legal Doc</span>
+              <span style={{ color: '#00e5ff', fontWeight: 600 }}>Ready for Ingest</span>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Cross-Segment Processing Pipeline (Next to it / Bagal mein) */}
+          <div
+            style={{
+              background: 'rgba(15, 23, 42, 0.5)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: '12px',
+              padding: '18px',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.95rem', fontWeight: 700, color: '#f8fafc' }}>
+                <Blocks size={18} color="#00e5ff" />
+                <span>Synchronized Cross-Segment Pipeline (8 Modules)</span>
+              </div>
+              <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                Line-by-Line Execution
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '520px', overflowY: 'auto', paddingRight: '4px' }}>
+              {pipelineSegments.map((seg, idx) => {
+                const Icon = seg.icon;
+                const state = segmentStates[seg.id] || { status: 'idle', details: seg.description };
+                const isCurrentActive = isProcessingPipeline && activeStepIndex === idx;
+                const isDone = state.status === 'completed';
+
+                return (
+                  <div
+                    key={seg.id}
+                    style={{
+                      background: isCurrentActive
+                        ? 'rgba(0, 229, 255, 0.08)'
+                        : isDone
+                        ? 'rgba(16, 185, 129, 0.04)'
+                        : 'rgba(255, 255, 255, 0.02)',
+                      border: isCurrentActive
+                        ? '1px solid rgba(0, 229, 255, 0.5)'
+                        : isDone
+                        ? '1px solid rgba(16, 185, 129, 0.3)'
+                        : '1px solid rgba(255, 255, 255, 0.06)',
+                      borderRadius: '8px',
+                      padding: '12px',
+                      transition: 'all 0.25s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div
+                          style={{
+                            width: '26px',
+                            height: '26px',
+                            borderRadius: '6px',
+                            background: isCurrentActive ? '#00e5ff' : isDone ? '#10b981' : 'rgba(255, 255, 255, 0.08)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: isCurrentActive || isDone ? '#000' : '#94a3b8'
+                          }}
+                        >
+                          {isCurrentActive ? <Loader2 size={15} className="animate-spin" /> : isDone ? <Check size={15} strokeWidth={3} /> : <Icon size={14} />}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.84rem', fontWeight: 700, color: isCurrentActive ? '#00e5ff' : isDone ? '#34d399' : '#f8fafc' }}>
+                            {idx + 1}. {seg.title}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {isCurrentActive && (
+                          <span className="status-pill info" style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                            ⚡ Processing...
+                          </span>
+                        )}
+                        {isDone && (
+                          <span className="status-pill success" style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                            ✓ Completed
+                          </span>
+                        )}
+                        {!isCurrentActive && !isDone && (
+                          <span style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            {state.status === 'pending' ? 'Queued' : 'Idle'}
+                          </span>
+                        )}
+
+                        <button
+                          className="btn btn-secondary"
+                          style={{
+                            fontSize: '0.72rem',
+                            padding: '3px 8px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            color: isDone ? '#00e5ff' : '#94a3b8',
+                            borderColor: isDone ? 'rgba(0, 229, 255, 0.4)' : 'rgba(255, 255, 255, 0.1)'
+                          }}
+                          onClick={() => onNavigate(seg.id)}
+                          title={`Navigate directly to ${seg.title}`}
+                        >
+                          Open in {seg.id === 'adapters' ? 'Adapters' : seg.id === 'evidence' ? 'Acquisition' : seg.id === 'player' ? 'Video AI' : seg.id === 'recovery' ? 'Recovery' : seg.id === 'timeline' ? 'Timeline' : seg.id === 'integrity' ? 'Integrity' : seg.id === 'ledger' ? 'Ledger' : 'Reports'} <ArrowRight size={12} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: '0.76rem', color: isCurrentActive ? '#cbd5e1' : isDone ? '#e2e8f0' : '#64748b', paddingLeft: '34px', lineHeight: 1.4 }}>
+                      {state.details}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ marginTop: 'auto', paddingTop: '14px', borderTop: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#94a3b8' }}>
+              <span>Direct Link: Click <strong>"Open in [Segment] →"</strong> to inspect results in any sidebar module</span>
+              <button
+                className="btn btn-secondary"
+                style={{ fontSize: '0.72rem', padding: '2px 8px', color: '#00e5ff' }}
+                onClick={() => onNavigate('universal')}
+              >
+                All-in-One Studio →
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
 

@@ -130,16 +130,18 @@ export default function UniversalScannerView({ onNavigate }) {
   // Quick Preset Handlers for ALL Cases (Positive and Negative)
   const handleLoadPreset = (presetType) => {
     let dummyFile;
-    if (presetType === 'video_cctv' || presetType === 'authentic_video') {
-      dummyFile = new File([new ArrayBuffer(4500000)], 'cctv_entrance_ch01_authentic.mp4', { type: 'video/mp4' });
-    } else if (presetType === 'authentic_photo') {
-      dummyFile = new File([new ArrayBuffer(1800000)], 'crime_scene_photo_authentic_unaltered.jpg', { type: 'image/jpeg' });
-    } else if (presetType === 'photo_edited' || presetType === 'modified_photo') {
-      dummyFile = new File([new ArrayBuffer(1800000)], 'suspect_photo_edited_photoshop.jpg', { type: 'image/jpeg' });
+    if (presetType === 'demo_pic_1' || presetType === 'authentic_photo') {
+      dummyFile = new File([new ArrayBuffer(1800000)], 'demo_pic_1_positive.jpg', { type: 'image/jpeg' });
+    } else if (presetType === 'demo_pic_2' || presetType === 'modified_photo' || presetType === 'photo_edited') {
+      dummyFile = new File([new ArrayBuffer(1800000)], 'demo_pic_2_negative_photoshop.jpg', { type: 'image/jpeg' });
+    } else if (presetType === 'demo_video_1' || presetType === 'authentic_video' || presetType === 'video_cctv') {
+      dummyFile = new File([new ArrayBuffer(4500000)], 'demo_video_1_positive_entrance.mp4', { type: 'video/mp4' });
+    } else if (presetType === 'demo_video_2') {
+      dummyFile = new File([new ArrayBuffer(4200000)], 'demo_video_2_positive_corridor.mp4', { type: 'video/mp4' });
+    } else if (presetType === 'corrupted_file' || presetType === 'corrupted_clip') {
+      dummyFile = new File([new ArrayBuffer(3200000)], 'demo_corrupted_file_negative.dd', { type: 'application/octet-stream' });
     } else if (presetType === 'spliced_video' || presetType === 'heavy_tamper') {
       dummyFile = new File([new ArrayBuffer(5100000)], 'tampered_spliced_cctv_lavf_heavy_changes.mp4', { type: 'video/mp4' });
-    } else if (presetType === 'corrupted_clip' || presetType === 'corrupted_file') {
-      dummyFile = new File([new ArrayBuffer(3200000)], 'dvr_bad_sectors_corrupted_carve.dd', { type: 'application/octet-stream' });
     } else if (presetType === 'fatal_corrupt') {
       dummyFile = new File([new ArrayBuffer(1200000)], 'fatal_bad_sectors_unreadable_stream.bin', { type: 'application/octet-stream' });
     }
@@ -367,7 +369,7 @@ export default function UniversalScannerView({ onNavigate }) {
                 Positive:
               </span>
               <button
-                onClick={() => handleLoadPreset('authentic_video')}
+                onClick={() => handleLoadPreset('demo_pic_1')}
                 style={{
                   padding: '5px 10px',
                   borderRadius: '6px',
@@ -379,12 +381,12 @@ export default function UniversalScannerView({ onNavigate }) {
                   cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
-                title="Pristine surveillance video: 0 changes, authentic bitstream"
+                title="Demo Pic 1: Authentic unaltered photo (0 changes, accurate for case)"
               >
-                ✓ Authentic Video (No Changes)
+                ✓ Demo Pic 1 (Positive)
               </button>
               <button
-                onClick={() => handleLoadPreset('authentic_photo')}
+                onClick={() => handleLoadPreset('demo_video_1')}
                 style={{
                   padding: '5px 10px',
                   borderRadius: '6px',
@@ -396,9 +398,26 @@ export default function UniversalScannerView({ onNavigate }) {
                   cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
-                title="Original photographic evidence: zero alteration"
+                title="Demo Video 1: Authentic CCTV entrance stream (0 cuts, accurate for case)"
               >
-                ✓ Clean Photo (No Changes)
+                ✓ Demo Video 1 (Positive)
+              </button>
+              <button
+                onClick={() => handleLoadPreset('demo_video_2')}
+                style={{
+                  padding: '5px 10px',
+                  borderRadius: '6px',
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  color: '#34d399',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                title="Demo Video 2: Authentic corridor multi-camera stream (0 cuts, accurate for case)"
+              >
+                ✓ Demo Video 2 (Positive)
               </button>
             </div>
 
@@ -407,7 +426,7 @@ export default function UniversalScannerView({ onNavigate }) {
                 Negative:
               </span>
               <button
-                onClick={() => handleLoadPreset('modified_photo')}
+                onClick={() => handleLoadPreset('demo_pic_2')}
                 style={{
                   padding: '5px 10px',
                   borderRadius: '6px',
@@ -419,26 +438,9 @@ export default function UniversalScannerView({ onNavigate }) {
                   cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
-                title="Edited photo: Photoshop metadata and ELA pixel changes"
+                title="Demo Pic 2: Adobe Photoshop edited (Changes detected, not accurate for case)"
               >
-                ⚠ Modified Photo (Has Changes)
-              </button>
-              <button
-                onClick={() => handleLoadPreset('heavy_tamper')}
-                style={{
-                  padding: '5px 10px',
-                  borderRadius: '6px',
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.4)',
-                  color: '#f87171',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                title="Heavy tampering: Spliced frames and Lavf transcoder injection (Not accurate for case)"
-              >
-                🚨 Heavy Changes (Not Accurate)
+                ⚠ Demo Pic 2 (Negative)
               </button>
               <button
                 onClick={() => handleLoadPreset('corrupted_file')}
@@ -453,26 +455,26 @@ export default function UniversalScannerView({ onNavigate }) {
                   cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
-                title="Corrupted DVR dump: sector damage and cluster fragmentation"
+                title="Corrupted File: Sector damage and carved fragments (Serious issues, negative)"
               >
-                💾 Corrupted File (Sector Issues)
+                💾 Corrupted File (Negative)
               </button>
               <button
-                onClick={() => handleLoadPreset('fatal_corrupt')}
+                onClick={() => handleLoadPreset('heavy_tamper')}
                 style={{
                   padding: '5px 10px',
                   borderRadius: '6px',
-                  background: 'rgba(225, 29, 72, 0.15)',
-                  border: '1px solid rgba(225, 29, 72, 0.4)',
-                  color: '#fda4af',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  color: '#f87171',
                   fontSize: '0.75rem',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}
-                title="Fatal corruption: Unreadable sectors and unrecoverable stream"
+                title="Heavy tampering: Spliced frames and Lavf transcoder injection"
               >
-                ⛔ Fatal Corrupted Dump
+                🚨 Heavy Spliced (Negative)
               </button>
             </div>
           </div>

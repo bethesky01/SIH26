@@ -534,14 +534,43 @@ function handleMockRequest(endpoint, options = {}) {
     }
     const fileName = file?.name || 'forensic_stream.mp4';
     const lowerName = fileName.toLowerCase();
-    const isImage = lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg') || lowerName.endsWith('.png') || lowerName.endsWith('.webp') || lowerName.includes('photo') || lowerName.includes('pic');
+    const isPresetPic1 = lowerName.includes('demo_pic_1');
+    const isPresetPic2 = lowerName.includes('demo_pic_2');
+    const isPresetVideo1 = lowerName.includes('demo_video_1');
+    const isPresetVideo2 = lowerName.includes('demo_video_2');
+    const isPresetCorrupt = lowerName.includes('demo_corrupted') || lowerName.includes('corrupt') || lowerName.endsWith('.dd');
+
+    const isImage = lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg') || lowerName.endsWith('.png') || lowerName.endsWith('.webp') || lowerName.includes('photo') || lowerName.includes('pic') || isPresetPic1 || isPresetPic2;
     
     // Determine exact positive or negative case
-    const isFatalCorrupt = lowerName.includes('fatal') || lowerName.includes('bad_sector') || lowerName.includes('severe');
-    const isCorrupted = isFatalCorrupt || lowerName.includes('corrupt') || lowerName.endsWith('.dd') || lowerName.endsWith('.raw') || lowerName.endsWith('.img') || lowerName.endsWith('.bin');
-    const isHeavyTamper = lowerName.includes('splic') || lowerName.includes('heavy') || lowerName.includes('cadence_cut') || lowerName.includes('inaccurate');
-    const isModified = isHeavyTamper || lowerName.includes('tamper') || lowerName.includes('fake') || lowerName.includes('edited') || lowerName.includes('photoshop') || lowerName.includes('modify') || !!baselineFile;
-    const isAuthentic = !isCorrupted && !isModified;
+    let isFatalCorrupt = false;
+    let isCorrupted = false;
+    let isHeavyTamper = false;
+    let isModified = false;
+    let isAuthentic = false;
+
+    if (isPresetPic1 || isPresetVideo1 || isPresetVideo2) {
+      isAuthentic = true;
+      isCorrupted = false;
+      isHeavyTamper = false;
+      isModified = false;
+    } else if (isPresetPic2) {
+      isAuthentic = false;
+      isCorrupted = false;
+      isModified = true;
+      isHeavyTamper = false;
+    } else if (isPresetCorrupt) {
+      isAuthentic = false;
+      isCorrupted = true;
+      isModified = false;
+      isHeavyTamper = false;
+    } else {
+      isFatalCorrupt = lowerName.includes('fatal') || lowerName.includes('bad_sector') || lowerName.includes('severe');
+      isCorrupted = isFatalCorrupt || lowerName.includes('corrupt') || lowerName.endsWith('.dd') || lowerName.endsWith('.raw') || lowerName.endsWith('.img') || lowerName.endsWith('.bin');
+      isHeavyTamper = lowerName.includes('splic') || lowerName.includes('heavy') || lowerName.includes('cadence_cut') || lowerName.includes('inaccurate');
+      isModified = isHeavyTamper || lowerName.includes('tamper') || lowerName.includes('fake') || lowerName.includes('edited') || lowerName.includes('photoshop') || lowerName.includes('modify') || !!baselineFile;
+      isAuthentic = !isCorrupted && !isModified;
+    }
 
     const hasChanges = isModified;
     const hasHeavyChanges = isHeavyTamper;
@@ -751,6 +780,247 @@ function handleMockRequest(endpoint, options = {}) {
     return newRep;
   }
 
+  // 11.5 Batch Ingest Demo Evidence & Cross-Segment Pipeline
+  if (path === '/cases/batch-ingest-demo') {
+    const payload = JSON.parse(options.body || '{}');
+    const selectedCaseId = payload.case_id || caseId || 'CASE-2026-001';
+
+    const demoItems = [
+      {
+        id: 'evd-demo-vid-1',
+        evidence_id: 'EVD-DEMO-001',
+        filename: 'demo_video_1_positive_entrance.mp4',
+        camera_name: 'CCTV Channel 01 (Main Gate Entrance)',
+        file_size: 4194304,
+        mime_type: 'video/mp4',
+        hash_sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+        hash_md5: 'a7c2e81902bf89c1d04e5a9102c3d4e5',
+        baseline_sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+        baseline_md5: 'a7c2e81902bf89c1d04e5a9102c3d4e5',
+        acquisition_timestamp: '2026-08-22T22:30:00Z',
+        original_timestamp: '2026-08-22 22:14:10',
+        normalized_timestamp: '2026-08-22 22:14:10 UTC',
+        duration_seconds: 15.0,
+        resolution: '1920x1080',
+        fps: 25.0,
+        codec: 'H.264 / AVC (High Profile)',
+        vendor: 'Hikvision Digital Technology',
+        status: 'Verified',
+        is_read_only: true,
+        case_id: selectedCaseId,
+        tampered: false,
+        verdict_positive: true,
+        description: 'Authentic CCTV entrance stream — verified 0 cuts, dual hash match, positive case evidence.'
+      },
+      {
+        id: 'evd-demo-vid-2',
+        evidence_id: 'EVD-DEMO-002',
+        filename: 'demo_video_2_positive_corridor.mp4',
+        camera_name: 'CCTV Channel 02 (Ground Corridor)',
+        file_size: 3874920,
+        mime_type: 'video/mp4',
+        hash_sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        hash_md5: '8743b52063cd84097a65d1633f5c74f5',
+        baseline_sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        baseline_md5: '8743b52063cd84097a65d1633f5c74f5',
+        acquisition_timestamp: '2026-08-22T22:35:00Z',
+        original_timestamp: '2026-08-22 22:14:12',
+        normalized_timestamp: '2026-08-22 22:14:12 UTC',
+        duration_seconds: 14.8,
+        resolution: '1920x1080',
+        fps: 25.0,
+        codec: 'H.264 / AVC (Main Profile)',
+        vendor: 'Dahua Technology (DHAV)',
+        status: 'Verified',
+        is_read_only: true,
+        case_id: selectedCaseId,
+        tampered: false,
+        verdict_positive: true,
+        description: 'Authentic corridor surveillance stream — verified 0 cuts, positive case evidence.'
+      },
+      {
+        id: 'evd-demo-pic-1',
+        evidence_id: 'EVD-DEMO-003',
+        filename: 'demo_pic_1_positive.jpg',
+        camera_name: 'EXIF Sensor Baseline Snapshot',
+        file_size: 1843200,
+        mime_type: 'image/jpeg',
+        hash_sha256: '1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b',
+        hash_md5: 'c4ca4238a0b923820dcc509a6f75849b',
+        baseline_sha256: '1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b',
+        baseline_md5: 'c4ca4238a0b923820dcc509a6f75849b',
+        acquisition_timestamp: '2026-08-22T22:40:00Z',
+        original_timestamp: '2026-08-22 14:15:00',
+        normalized_timestamp: '2026-08-22 14:15:00 UTC',
+        duration_seconds: 0.0,
+        resolution: '3840x2160',
+        fps: 0.0,
+        codec: 'JPEG / EXIF Baseline',
+        vendor: 'Sony Security Sensor',
+        status: 'Verified',
+        is_read_only: true,
+        case_id: selectedCaseId,
+        tampered: false,
+        verdict_positive: true,
+        description: 'Demo Pic 1 (Positive): Authentic unaltered sensor capture. 0 changes detected, accurate for case.'
+      },
+      {
+        id: 'evd-demo-pic-2',
+        evidence_id: 'EVD-DEMO-004',
+        filename: 'demo_pic_2_negative_photoshop.jpg',
+        camera_name: 'Scene Still (Altered)',
+        file_size: 2150400,
+        mime_type: 'image/jpeg',
+        hash_sha256: '2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c',
+        hash_md5: 'c81e728d9d4c2f636f067f89cc14862c',
+        baseline_sha256: '0000000000000000000000000000000000000000000000000000000000000000',
+        baseline_md5: '00000000000000000000000000000000',
+        acquisition_timestamp: '2026-08-22T22:45:00Z',
+        original_timestamp: '2026-08-22 14:15:00',
+        normalized_timestamp: '2026-08-22 14:15:00 UTC',
+        duration_seconds: 0.0,
+        resolution: '3840x2160',
+        fps: 0.0,
+        codec: 'JPEG (Photoshop CC 2024)',
+        vendor: 'Adobe Photoshop Injection',
+        status: 'Tampered',
+        is_read_only: true,
+        case_id: selectedCaseId,
+        tampered: true,
+        verdict_positive: false,
+        description: 'Demo Pic 2 (Negative): Adobe Photoshop edited. ELA localized variance 18.4%. Not accurate for case.'
+      },
+      {
+        id: 'evd-demo-corrupt',
+        evidence_id: 'EVD-DEMO-005',
+        filename: 'demo_corrupted_file_negative.dd',
+        camera_name: 'Damaged DVR Hard Drive Dump',
+        file_size: 5242880,
+        mime_type: 'application/octet-stream',
+        hash_sha256: '3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d',
+        hash_md5: 'eccbc87e4b5ce2fe28308fd9f2a7baf3',
+        baseline_sha256: '3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d',
+        baseline_md5: 'eccbc87e4b5ce2fe28308fd9f2a7baf3',
+        acquisition_timestamp: '2026-08-22T22:50:00Z',
+        original_timestamp: '2026-08-22 22:10:00',
+        normalized_timestamp: '2026-08-22 22:10:00 UTC',
+        duration_seconds: 8.5,
+        resolution: '1920x1080 (Fragmented)',
+        fps: 25.0,
+        codec: 'Raw Sectors / AVC Carved',
+        vendor: 'Raw Disk Image (.dd)',
+        status: 'Recovered',
+        is_read_only: true,
+        case_id: selectedCaseId,
+        tampered: false,
+        is_corrupted: true,
+        verdict_positive: false,
+        description: 'Corrupted File (Negative): Sector damage detected. Reconstructed 4 video clusters via NALU bitstream carving.'
+      },
+      {
+        id: 'evd-demo-doc-1',
+        evidence_id: 'EVD-DEMO-006',
+        filename: 'case_seizure_memo_sec65b.pdf',
+        camera_name: 'Investigative Police Seizure Memo',
+        file_size: 412900,
+        mime_type: 'application/pdf',
+        hash_sha256: '4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e',
+        hash_md5: 'a87ff679a2f3e71d9181a67b7542122c',
+        baseline_sha256: '4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e',
+        baseline_md5: 'a87ff679a2f3e71d9181a67b7542122c',
+        acquisition_timestamp: '2026-08-22T23:00:00Z',
+        original_timestamp: '2026-08-22 22:00:00',
+        normalized_timestamp: '2026-08-22 22:00:00 UTC',
+        duration_seconds: 0.0,
+        resolution: 'Document',
+        fps: 0.0,
+        codec: 'PDF / Court Form 65B',
+        vendor: 'Police Station Cyber Cell',
+        status: 'Verified',
+        is_read_only: true,
+        case_id: selectedCaseId,
+        tampered: false,
+        verdict_positive: true,
+        description: 'Official Court Seizure Memo & Section 65B Chain of Custody Declaration.'
+      }
+    ];
+
+    // Filter out duplicates and add to liveEvidence
+    for (const item of demoItems) {
+      if (!liveEvidence.some(e => e.evidence_id === item.evidence_id)) {
+        liveEvidence.push(item);
+      }
+    }
+
+    // Seal in liveLedger
+    liveLedger.push({
+      block_height: liveLedger.length + 1,
+      timestamp: new Date().toISOString(),
+      action: 'BATCH_DEMO_EVIDENCE_INGESTION',
+      performed_by: 'Inspector R. Verma (Cyber Lead)',
+      evidence_id: 'BATCH-6-FILES',
+      previous_hash: liveLedger[liveLedger.length - 1]?.current_hash || '0000000000000000000000000000000000000000000000000000000000000000',
+      current_hash: '7f9a8b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a',
+      details: 'Automated 6-file demo batch ingest across all 8 forensic platform segments.'
+    });
+
+    return {
+      status: 'SUCCESS',
+      ingested_count: demoItems.length,
+      evidence_items: demoItems,
+      segments_processed: [
+        {
+          segment_id: 'adapters',
+          name: 'Device & Filesystem Adapters',
+          status: 'COMPLETED',
+          details: 'Identified Hikvision, Dahua DHAV, and RAW Sector formats. Hardware write-blocker verified.'
+        },
+        {
+          segment_id: 'evidence',
+          name: 'Forensic Acquisition & Hashes',
+          status: 'COMPLETED',
+          details: 'Computed SHA-256 + MD5 hashes for all 6 items. Hardware write-block seal applied (Read-Only 0444).'
+        },
+        {
+          segment_id: 'player',
+          name: 'Video Extraction & AI Detection',
+          status: 'COMPLETED',
+          details: 'YOLOv8 forensic model identified 9 targets (Suspect, White SUV, Weapon Implement, Gate Breach).'
+        },
+        {
+          segment_id: 'recovery',
+          name: 'Deleted Cluster Recovery',
+          status: 'COMPLETED',
+          details: 'Scanned 16,384 sectors. Reconstructed 4 fragmented NALU clusters from demo_corrupted_file_negative.dd.'
+        },
+        {
+          segment_id: 'timeline',
+          name: 'Multi-Camera Normalization',
+          status: 'COMPLETED',
+          details: 'Synchronized Entrance Ch-01 and Corridor Ch-02 clocks. Drift corrected to 0.00ms UTC offset.'
+        },
+        {
+          segment_id: 'integrity',
+          name: 'Tamper & Integrity Scan',
+          status: 'COMPLETED',
+          details: 'Analyzed 5 media items: 3 Positive Authentic, 1 Modified (Photoshop ELA 18.4%), 1 Corrupted (Carved).'
+        },
+        {
+          segment_id: 'ledger',
+          name: 'Blockchain Audit Ledger',
+          status: 'COMPLETED',
+          details: 'Minted Block #' + (liveLedger.length) + ' with SHA-256 chained hash. Immutable audit trail locked.'
+        },
+        {
+          segment_id: 'reports',
+          name: 'Court Reports & Sec 65B',
+          status: 'COMPLETED',
+          details: 'Section 65B Indian Evidence Act Forensic Certificate generated and cryptographically sealed.'
+        }
+      ]
+    };
+  }
+
   // 12. Demo Reload
   if (path === '/demo/load') {
     liveCases = [...mockCases];
@@ -811,6 +1081,7 @@ export const api = {
   getCases: () => request('/cases'),
   getCase: (caseId) => request(`/cases/${encodeURIComponent(caseId)}`),
   createCase: (data) => request('/cases', { method: 'POST', body: JSON.stringify(data) }),
+  ingestDemoEvidenceBatch: (payload) => request('/cases/batch-ingest-demo', { method: 'POST', body: JSON.stringify(payload || {}) }),
 
   // Devices & Cameras
   getDevices: (caseId) => request(`/devices${caseId ? `?case_id=${encodeURIComponent(caseId)}` : ''}`),

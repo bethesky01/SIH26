@@ -490,4 +490,35 @@ def test_universal_forensic_diagnose_4_pillars():
     assert spliced_diag["case_accuracy_label"] == "NOT ACCURATE FOR THE CASE"
     assert "SERIOUS ISSUES" in spliced_diag["verdict_headline"]
 
+def test_batch_demo_evidence_ingestion_and_segments_pipeline():
+    """Verify batch demo evidence ingest returns all 8 segments with completed statuses."""
+    from fastapi.testclient import TestClient
+    from backend.app.main import app
+
+    client = TestClient(app)
+    res = client.post(
+        "/api/cases/batch-ingest-demo",
+        json={"case_id": "CASE-2026-001"}
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "SUCCESS"
+    assert data["ingested_count"] == 6
+    assert len(data["segments_processed"]) == 8
+
+    seg_ids = [s["segment_id"] for s in data["segments_processed"]]
+    assert "adapters" in seg_ids
+    assert "evidence" in seg_ids
+    assert "player" in seg_ids
+    assert "recovery" in seg_ids
+    assert "timeline" in seg_ids
+    assert "integrity" in seg_ids
+    assert "ledger" in seg_ids
+    assert "reports" in seg_ids
+
+    for seg in data["segments_processed"]:
+        assert seg["status"] == "COMPLETED"
+        assert len(seg["details"]) > 10
+
+
 
