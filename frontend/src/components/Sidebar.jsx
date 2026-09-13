@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   LayoutDashboard,
-  HardDriveDownload,
   Video,
   Clock,
   ShieldCheck,
@@ -10,25 +9,26 @@ import {
   FileText,
   Cpu,
   Lock,
+  FolderOpen,
 } from 'lucide-react';
 
 export default function Sidebar({ activeTab, onTabChange, stats }) {
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard & Metrics', icon: LayoutDashboard },
-    { id: 'evidence', label: 'Evidence Ingestion', icon: HardDriveDownload, badge: stats?.evidence_count },
-    { id: 'player', label: 'Forensic Video & AI', icon: Video },
-    { id: 'timeline', label: 'Unified Timeline', icon: Clock, badge: stats?.timeline_events_count },
-    { id: 'integrity', label: 'Cryptographic Integrity', icon: ShieldCheck },
-    { id: 'ledger', label: 'Chain of Custody Ledger', icon: Blocks, badge: stats?.custody_blocks_count },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'evidence', label: 'Evidence Videos', icon: FolderOpen, badge: stats?.evidence_count },
+    { id: 'player', label: 'Video Player & AI', icon: Video },
+    { id: 'timeline', label: 'Camera Timeline', icon: Clock, badge: stats?.timeline_events_count },
+    { id: 'integrity', label: 'Tamper Verification', icon: ShieldCheck },
+    { id: 'ledger', label: 'Audit History', icon: Blocks, badge: stats?.custody_blocks_count },
     { id: 'recovery', label: 'Deleted Video Recovery', icon: FileSearch, badge: stats?.recovery_records_count },
-    { id: 'reports', label: 'Forensic Reports', icon: FileText },
+    { id: 'reports', label: 'Court Reports', icon: FileText },
     { id: 'adapters', label: 'Hardware Adapters', icon: Cpu },
   ];
 
   return (
     <aside className="sidebar">
       <div className="sidebar-nav">
-        <div className="nav-section-title">Forensic Pipeline</div>
+        <div className="nav-section-title">Navigation</div>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -52,10 +52,10 @@ export default function Sidebar({ activeTab, onTabChange, stats }) {
         <div className="protocol-card">
           <div className="protocol-header">
             <Lock size={13} />
-            <span>ISO/IEC 27037 PROTOCOL</span>
+            <span>SECURE FORENSIC MODE</span>
           </div>
           <div className="protocol-desc">
-            Dual SHA-256/MD5 hashing. Working copy isolated. Originals write-protected.
+            All evidence is read-only locked and verified with SHA-256 cryptographic hashes.
           </div>
         </div>
       </div>

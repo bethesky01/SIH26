@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, RefreshCw, UserCheck, AlertCircle, Database } from 'lucide-react';
+import { Shield, RefreshCw, Database, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export default function Header({
   cases,
@@ -9,6 +9,8 @@ export default function Header({
   isReloading,
   stats,
 }) {
+  const isCompromised = stats?.integrity_status === 'COMPROMISED';
+
   return (
     <header className="top-header">
       <div className="header-left">
@@ -18,27 +20,28 @@ export default function Header({
           </div>
           <div>
             <div className="brand-title">
-              FORENSIC-NVR <span className="brand-badge">ISO 27037</span>
+              FORENSIC-NVR
             </div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
-              Multi-Vendor DVR/NVR Evidence Platform
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              CCTV Evidence Platform
             </div>
           </div>
         </div>
 
         {/* Case Switcher */}
         <div className="case-selector">
-          <Database size={16} color="var(--cyan-primary)" />
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>CASE:</span>
+          <Database size={15} color="var(--cyan-primary)" />
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 500 }}>CASE:</span>
           <select
             value={selectedCaseId || ''}
             onChange={(e) => onSelectCase(e.target.value)}
             disabled={isReloading}
+            style={{ maxWidth: 260 }}
           >
             {cases && cases.length > 0 ? (
               cases.map((c) => (
                 <option key={c.case_id} value={c.case_id}>
-                  {c.case_id} - {c.name.substring(0, 32)}...
+                  {c.case_id} — {c.name.substring(0, 28)}...
                 </option>
               ))
             ) : (
@@ -49,21 +52,17 @@ export default function Header({
       </div>
 
       <div className="header-right">
-        {/* Live Integrity Status Indicator */}
+        {/* Simple Live Integrity Status Indicator */}
         <div
-          className={`status-pill ${
-            stats?.integrity_status === 'VERIFIED' ? 'success' : stats?.integrity_status === 'COMPROMISED' ? 'danger' : 'info'
-          }`}
+          className={`status-pill ${isCompromised ? 'danger' : 'success'}`}
+          title={isCompromised ? 'Integrity alert: Hash mismatch found!' : 'All evidence hashes are cryptographically verified and intact'}
         >
-          <span
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: '50%',
-              backgroundColor: stats?.integrity_status === 'VERIFIED' ? '#10b981' : stats?.integrity_status === 'COMPROMISED' ? '#ef4444' : '#00e5ff',
-            }}
-          />
-          {stats?.integrity_status || 'SECURE LOCK'}
+          {isCompromised ? (
+            <AlertTriangle size={13} />
+          ) : (
+            <CheckCircle2 size={13} />
+          )}
+          <span>{isCompromised ? 'Tampering Alert' : 'Evidence Verified'}</span>
         </div>
 
         {/* Reload Demo Data Button */}
@@ -71,21 +70,22 @@ export default function Header({
           className="btn btn-secondary"
           onClick={onReloadDemo}
           disabled={isReloading}
-          title="Reset or Reload standard synthetic CCTV cases with realistic evidence"
+          title="Reset sample cases and CCTV evidence"
+          style={{ fontSize: '0.82rem', padding: '7px 12px' }}
         >
-          <RefreshCw size={14} className={isReloading ? 'animate-spin' : ''} />
-          {isReloading ? 'Loading Demo...' : 'Load Demo Data'}
+          <RefreshCw size={13} className={isReloading ? 'animate-spin' : ''} />
+          {isReloading ? 'Resetting...' : 'Reset Demo'}
         </button>
 
         {/* Investigator Persona Badge */}
         <div className="investigator-badge">
-          <div className="avatar-circle">VS</div>
+          <div className="avatar-circle">RV</div>
           <div style={{ lineHeight: 1.2 }}>
             <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              Insp. V. Singh
+              Insp. R. Verma
             </div>
             <div style={{ fontSize: '0.68rem', color: 'var(--cyan-primary)' }}>
-              Forensic Expert #CID-884
+              Lead Investigator
             </div>
           </div>
         </div>

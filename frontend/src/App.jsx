@@ -139,10 +139,10 @@ export default function App() {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span className="status-pill info" style={{ fontSize: '0.72rem', fontWeight: 700 }}>
-                ⚡ STANDALONE DEMO MODE
+                ⚡ DEMO READY
               </span>
               <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                Loaded pre-authenticated ISO/IEC 27037 forensic dataset (Cases, CCTV footage, AI object tracking & blockchain ledger). All views and tools are operational.
+                Investigation sample data loaded. Explore CCTV footage, AI tracking, tamper checks, and reports.
               </span>
             </div>
             <button
@@ -170,7 +170,9 @@ export default function App() {
             <DashboardView
               stats={stats}
               activeCase={activeCase}
+              evidenceList={evidenceList}
               onNavigate={setActiveTab}
+              onInspectEvidence={handleInspectEvidence}
             />
           )}
 
