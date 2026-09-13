@@ -58,14 +58,19 @@ This document provides a comprehensive, technical audit of **what technologies a
 
 ## 2. Deep-Dive: How Each Core Technology Works in Saboot Netra
 
-### 2.1 Cryptographic Integrity & Tamper Detection
-* **Technology**: Python `hashlib` + Browser `crypto.subtle`
+### 2.1 Cryptographic Integrity & Media Tamper Detective (Photo & Video)
+* **Technology**: Python `hashlib`, OpenCV (`cv2.absdiff`, `cv2.imencode`), NumPy, Browser `crypto.subtle`
 * **How It Works**:
-  1. During ingestion, the file is read in **64 KB binary chunks** (`iter(lambda: f.read(65536), b"")`) to prevent RAM exhaustion on multi-gigabyte video dumps.
-  2. Both **SHA-256** and **MD5** digests are computed and stored in the `hash_records` table as the immutable baseline seal.
-  3. The OS read-only bit is applied to the original evidence (`os.chmod(path, 0o444)`), and all downstream analysis works on an isolated forensic duplicate.
-  4. The platform provides a live **"Simulate Tamper"** function: modifying even a single bit in the file immediately changes the SHA-256 digest, triggering an instant visual alert in the UI.
-* **Code Location**: [`backend/app/hashing/integrity.py`](file:///c:/Users/prern/SIH%2026%202/backend/app/hashing/integrity.py)
+  1. During ingestion, the file is read in **64 KB binary chunks** (`iter(lambda: f.read(65536), b"")`) to compute sealed **SHA-256** and **MD5** digests.
+  2. **Photo / Image Tamper Detective**:
+     - **Software Tag Scanner**: Scans binary headers for commercial editor artifacts (`Adobe Photoshop`, `Lightroom`, `GIMP`, `Canva`, `Snapseed`).
+     - **Error Level Analysis (ELA)**: Recompresses the image in memory at 90% JPEG quality and calculates `cv2.absdiff(original, recompressed) * 10`. Discontinuous compression gradients localize spliced, pasted, or cloned objects into bounding boxes.
+     - **Quantization Inspection**: Compares Discrete Cosine Transform (DCT) luminance tables against camera hardware profiles to identify secondary saves.
+  3. **Video Tamper Detective**:
+     - **Transcoder Signatures**: Checks container atoms for non-camera transcoders (`Lavf`, `FFmpeg`, `Premiere`, `HandBrake`).
+     - **Temporal Frame Splicing**: Measures inter-frame optical motion flux across GOPs; sudden discontinuities flag spliced or deleted seconds (e.g. `T: 04.2s - 06.5s`).
+  4. **Side-by-Side Comparison**: Compares suspect file vs baseline bit-for-bit to locate the exact first mutated byte offset (`0x0001B420`) and size deltas.
+* **Code Location**: [`backend/app/hashing/tamper_analyzer.py`](file:///c:/Users/prern/SIH%2026%202/backend/app/hashing/tamper_analyzer.py), [`backend/app/hashing/integrity.py`](file:///c:/Users/prern/SIH%2026%202/backend/app/hashing/integrity.py), and [`frontend/src/views/IntegrityView.jsx`](file:///c:/Users/prern/SIH%2026%202/frontend/src/views/IntegrityView.jsx)
 
 ---
 

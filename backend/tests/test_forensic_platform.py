@@ -373,3 +373,53 @@ def test_ai_video_file_analysis_and_corrupted_recovery():
     assert corrupt_data["status"] == "SUCCESS"
     assert corrupt_data["is_corrupted"] is True
     assert corrupt_data["fragments_found"] >= 1
+
+def test_media_tamper_and_modification_detection():
+    from fastapi.testclient import TestClient
+    from backend.app.main import app
+    import io
+
+    client = TestClient(app)
+
+    # 1. Test image with Photoshop tampering signature
+    tampered_photo = io.BytesIO(b"\xff\xd8\xff\xe1\x00\x18Exif\x00\x00Adobe Photoshop CC 2024 (Windows)\xff\xda_PIXEL_DATA")
+    res_img = client.post(
+        "/api/integrity/analyze-media",
+        files={"file": ("crime_scene_edited.jpg", tampered_photo, "image/jpeg")}
+    )
+    assert res_img.status_code == 200
+    img_data = res_img.json()
+    assert img_data["status"] == "SUCCESS"
+    assert img_data["has_changed"] is True
+    assert img_data["tamper_detected"] is True
+    assert img_data["changes_count"] >= 1
+    assert any("Photoshop" in c["title"] or "Photoshop" in c["details"] for c in img_data["changes_detected"])
+
+    # 2. Test video with transcoder signature
+    tampered_video = io.BytesIO(b"\x00\x00\x00\x20ftypisom\x00\x00\x00\x08freeLavf58.76.100\x00\x00\x00\x10mdat_VIDEO_STREAM")
+    res_vid = client.post(
+        "/api/integrity/analyze-media",
+        files={"file": ("cctv_splice.mp4", tampered_video, "video/mp4")}
+    )
+    assert res_vid.status_code == 200
+    vid_data = res_vid.json()
+    assert vid_data["status"] == "SUCCESS"
+    assert vid_data["has_changed"] is True
+    assert any("Lavf" in c["title"] or "Lavf" in c["details"] for c in vid_data["changes_detected"])
+
+    # 3. Test Two-File Comparison (Original vs Suspect)
+    orig_file = io.BytesIO(b"AUTHENTIC_CCTV_STREAM_DATA_ORIGINAL_VERSION_001")
+    suspect_file = io.BytesIO(b"AUTHENTIC_CCTV_STREAM_DATA_TAMPERED_VERSION_001")
+    res_comp = client.post(
+        "/api/integrity/analyze-media",
+        files={
+            "file": ("suspect_clip.mp4", suspect_file, "video/mp4"),
+            "baseline_file": ("original_clip.mp4", orig_file, "video/mp4")
+        }
+    )
+    assert res_comp.status_code == 200
+    comp_data = res_comp.json()
+    assert comp_data["is_comparison"] is True
+    assert comp_data["has_changed"] is True
+    assert comp_data["first_modified_byte_offset"] != "None"
+

@@ -384,6 +384,146 @@ function handleMockRequest(endpoint, options = {}) {
     };
   }
 
+  if (path === '/integrity/analyze-media') {
+    const file = options.body?.get?.('file');
+    const baseline = options.body?.get?.('baseline_file');
+    const fileName = file?.name || 'suspect_evidence.jpg';
+    const isImage = /\.(jpg|jpeg|png|bmp|webp)$/i.test(fileName);
+    const isVideo = /\.(mp4|avi|mov|mkv|dav|webm)$/i.test(fileName);
+    const hasTamperHint = /tamper|edit|mod|splice|photoshop|cut|changed/i.test(fileName);
+
+    if (baseline) {
+      // Comparison Mode
+      const isDifferent = hasTamperHint || file?.size !== baseline?.size;
+      return {
+        status: 'SUCCESS',
+        is_comparison: true,
+        filename: fileName,
+        media_type: isImage ? 'Compared Photo' : (isVideo ? 'Compared Video' : 'Compared Media'),
+        original_sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+        suspect_sha256: isDifferent ? 'd41d8cd98f00b204e9800998ecf8427e0123456789abcdef0123456789abcdef' : '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+        original_size: baseline?.size || 1024000,
+        suspect_size: file?.size || 1025500,
+        size_delta_bytes: isDifferent ? 1500 : 0,
+        first_modified_byte_offset: isDifferent ? '0x0001B420' : 'None',
+        has_changed: isDifferent,
+        tamper_detected: isDifferent,
+        verdict: isDifferent ? 'MODIFICATION_DETECTED' : 'AUTHENTIC_IDENTICAL',
+        verdict_label: isDifferent ? '⚠ EVIDENCE MODIFIED (DIFF FOUND)' : '✓ 100% BIT-FOR-BIT IDENTICAL',
+        summary: isDifferent ? 'Discrepancies found: 3 forensic differences between original and suspect copies.' : 'Files are bit-for-bit identical. 0 byte alterations detected.',
+        changes_count: isDifferent ? 3 : 0,
+        changes_detected: isDifferent ? [
+          {
+            category: 'Cryptographic Hash Mismatch',
+            severity: 'CRITICAL',
+            title: 'SHA-256 Digest Discrepancy',
+            details: 'Suspect file digest does not match sealed original baseline. Avalanche effect triggered.'
+          },
+          {
+            category: 'Physical Byte Mutation',
+            severity: 'CRITICAL',
+            title: 'First Alteration at Offset 0x0001B420',
+            details: 'Byte mutation detected at index 111,648 in binary stream.'
+          },
+          {
+            category: 'Allocation Delta',
+            severity: 'HIGH',
+            title: 'File Size Divergence (+1,500 bytes)',
+            details: 'Suspect file contains additional unaligned byte payload.'
+          }
+        ] : []
+      };
+    }
+
+    // Single File Mode
+    if (hasTamperHint) {
+      return {
+        status: 'SUCCESS',
+        filename: fileName,
+        media_type: isImage ? 'Picture / Photo' : (isVideo ? 'CCTV Video Stream' : 'Forensic Media'),
+        file_size: file?.size || 2048576,
+        hash_sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        hash_md5: 'd41d8cd98f00b204e9800998ecf8427e',
+        has_changed: true,
+        tamper_detected: true,
+        tamper_score: 0.92,
+        confidence_percentage: 95.8,
+        verdict: 'MODIFICATION_DETECTED',
+        verdict_label: isImage ? '⚠ IMAGE MODIFIED / SPLICED' : '⚠ VIDEO ALTERED / SPLICED',
+        summary: `Evidence alteration detected! ${isImage ? '3 image manipulation' : '3 video tampering'} anomalies identified.`,
+        changes_count: 3,
+        changes_detected: isImage ? [
+          {
+            category: 'Software Editor Signature',
+            severity: 'CRITICAL',
+            title: 'Commercial Editor: Adobe Photoshop 2024',
+            details: 'Binary headers contain Adobe Photoshop software signature. CCTV camera firmware does not inject desktop editor tags.'
+          },
+          {
+            category: 'Pixel Error Level Analysis (ELA)',
+            severity: 'HIGH',
+            title: 'Compression Discontinuity (Spliced Region)',
+            details: 'High-frequency ELA variance (18.4%) localized in quadrant [X: 0.34, Y: 0.22, W: 0.16, H: 0.12]. Inconsistent quantization reveals pasted element.',
+            bounding_box: [0.34, 0.22, 0.16, 0.12]
+          },
+          {
+            category: 'Quantization Table Discrepancy',
+            severity: 'MEDIUM',
+            title: 'Non-Hardware DQT Table Mismatch',
+            details: 'Luminance quantization does not match hardware sensor profiles, indicating secondary saving.'
+          }
+        ] : [
+          {
+            category: 'Transcoder Software Injected',
+            severity: 'CRITICAL',
+            title: 'Non-Camera Encoder: Lavf (FFmpeg)',
+            details: 'Found encoder marker Lavf in MP4 moov container atom. Camera hardware writes elementary streams directly.'
+          },
+          {
+            category: 'Frame Splicing / Deletion',
+            severity: 'HIGH',
+            title: 'Temporal Scene Cut at T: 00:04.2s - 00:06.5s',
+            details: 'Visual motion flux jump detected across consecutive keyframes. 58 frames deleted or spliced.',
+            timestamps_sec: [4.2, 6.5]
+          },
+          {
+            category: 'GOP Cadence Discontinuity',
+            severity: 'MEDIUM',
+            title: 'Broken I-Frame Cadence at Offset 0x01E400',
+            details: 'Surveillance DVR 25fps closed GOP interval violated.'
+          }
+        ],
+        ela_heatmap: {
+          localized_bounding_box: [0.34, 0.22, 0.16, 0.12],
+          compression_variance_pct: 18.4
+        }
+      };
+    }
+
+    // Authentic Clean File
+    return {
+      status: 'SUCCESS',
+      filename: fileName,
+      media_type: isImage ? 'Picture / Photo' : (isVideo ? 'CCTV Video Stream' : 'Forensic Media'),
+      file_size: file?.size || 1542000,
+      hash_sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+      hash_md5: 'a7c2e81902bf89c1d04e5a9102c3d4e5',
+      has_changed: false,
+      tamper_detected: false,
+      tamper_score: 0.02,
+      confidence_percentage: 97.4,
+      verdict: 'AUTHENTIC_ORIGINAL',
+      verdict_label: '✓ VERIFIED AUTHENTIC (0 CHANGES)',
+      summary: 'Evidence passed all cryptographic, metadata, and pixel ELA integrity checks without alteration. Zero modifications detected.',
+      changes_count: 0,
+      changes_detected: [],
+      ela_heatmap: {
+        localized_bounding_box: null,
+        compression_variance_pct: 0.8
+      }
+    };
+  }
+
   // 10. Custody Blockchain Ledger & Simplified Audit Trail
   if (path === '/custody/audit-trail') {
     return mockAuditTrail;
@@ -532,6 +672,7 @@ export const api = {
   // Cryptographic Integrity & Tamper Testing
   verifyIntegrity: (evidenceId) => request(`/integrity/verify/${encodeURIComponent(evidenceId)}`, { method: 'POST' }),
   simulateTamper: (evidenceId) => request(`/integrity/simulate-tamper/${encodeURIComponent(evidenceId)}`, { method: 'POST' }),
+  analyzeMediaTamper: (formData) => request('/integrity/analyze-media', { method: 'POST', body: formData }),
 
   // Blockchain Audit Ledger & Simplified Custody Trail
   getCustodyLedger: (caseId) => request(`/custody/${encodeURIComponent(caseId)}`),

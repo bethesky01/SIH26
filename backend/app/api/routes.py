@@ -24,6 +24,7 @@ from backend.app.schemas.forensic_schemas import (
     TimestampComparisonItem
 )
 from backend.app.hashing.integrity import compute_hashes, verify_file_integrity, set_read_only
+from backend.app.hashing.tamper_analyzer import MediaTamperAnalyzer
 from backend.app.custody.ledger import append_ledger_event, verify_case_chain
 from backend.app.parsers.vendor_adapters import VendorParserRegistry
 from backend.app.parsers.device_identifier import DVRDeviceIdentifier
@@ -1160,6 +1161,32 @@ def simulate_evidence_tamper(evidence_id: str, db: Session = Depends(get_db)):
         "altered_sha256": res["calculated_sha256"],
         "message": "Tamper injected successfully into working copy. Verification now correctly reports INTEGRITY_COMPROMISED."
     }
+
+@router.post("/integrity/analyze-media")
+async def analyze_media_integrity(
+    file: UploadFile = File(...),
+    baseline_file: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db)
+):
+    """
+    Forensic Tamper & Modification Detection for uploaded video or picture (photo).
+    Detects if the file has changed / been tampered with, and what changes occurred.
+    Optionally compares against an original baseline copy.
+    """
+    file_bytes = await file.read()
+    filename = file.filename or "uploaded_media"
+
+    baseline_bytes = None
+    if baseline_file:
+        baseline_bytes = await baseline_file.read()
+
+    result = MediaTamperAnalyzer.analyze_media(
+        file_bytes=file_bytes,
+        filename=filename,
+        baseline_bytes=baseline_bytes
+    )
+
+    return result
 
 # ---------------------------------------------------------------------------
 # Chain of Custody & Tamper-Evident Ledger

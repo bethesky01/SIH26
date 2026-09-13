@@ -20,7 +20,7 @@ export default function Sidebar({ activeTab, onTabChange, stats }) {
     { id: 'player', label: 'Video Extraction & AI', icon: Video, tag: 'Mod 4 & 8' },
     { id: 'recovery', label: 'Deleted Video Recovery', icon: FileSearch, tag: 'Mod 5' },
     { id: 'timeline', label: 'Multi-Camera Timeline', icon: Clock, tag: 'Mod 6 & 7', badge: stats?.timeline_events_count },
-    { id: 'integrity', label: 'Hashing & Integrity', icon: ShieldCheck, tag: 'Mod 9' },
+    { id: 'integrity', label: 'Tamper & Integrity Scan', icon: ShieldCheck, tag: 'Mod 9' },
     { id: 'ledger', label: 'Chain of Custody', icon: Blocks, tag: 'Mod 10', badge: stats?.custody_blocks_count },
     { id: 'reports', label: 'Court Reports', icon: FileText, tag: 'Mod 11' },
   ];
