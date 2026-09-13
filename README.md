@@ -203,6 +203,13 @@ pytest
 
 ---
 
+## 📚 Architecture & Documentation
+
+- 📘 **[TECHNICAL_DOCUMENTATION.md](TECHNICAL_DOCUMENTATION.md)**: Full technical specification, architectural diagrams, legal compliance framework, and data models.
+- 🛠️ **[TECHNOLOGY_STACK.md](TECHNOLOGY_STACK.md)**: Exhaustive audit of **what technology is used**, **how it works**, and **where it is located** in the codebase.
+
+---
+
 ## 👥 Authors & Acknowledgments
 
 Developed with ❤️ for the **Smart India Hackathon (SIH)**.  

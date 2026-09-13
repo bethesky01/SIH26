@@ -42,6 +42,8 @@ The **Unified Multi-Vendor DVR/NVR Forensic Analysis & Evidence Intelligence Pla
 
 ## 2. Complete Technology Stack
 
+> 💡 **Granular Implementation Reference**: For an exhaustive breakdown of what technology is used, how each engine is implemented, and the exact file path where it resides, see [`TECHNOLOGY_STACK.md`](TECHNOLOGY_STACK.md).
+
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────┐
 │                                    FRONTEND LAYER                                        │
