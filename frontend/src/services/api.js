@@ -535,22 +535,70 @@ function handleMockRequest(endpoint, options = {}) {
     const fileName = file?.name || 'forensic_stream.mp4';
     const lowerName = fileName.toLowerCase();
     const isImage = lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg') || lowerName.endsWith('.png') || lowerName.endsWith('.webp') || lowerName.includes('photo') || lowerName.includes('pic');
-    const isCorrupted = lowerName.includes('corrupt') || lowerName.endsWith('.dd') || lowerName.endsWith('.raw') || lowerName.endsWith('.img') || lowerName.endsWith('.bin');
-    const hasTamperHint = lowerName.includes('tamper') || lowerName.includes('fake') || lowerName.includes('edited') || lowerName.includes('splic') || !!baselineFile;
+    
+    // Determine exact positive or negative case
+    const isFatalCorrupt = lowerName.includes('fatal') || lowerName.includes('bad_sector') || lowerName.includes('severe');
+    const isCorrupted = isFatalCorrupt || lowerName.includes('corrupt') || lowerName.endsWith('.dd') || lowerName.endsWith('.raw') || lowerName.endsWith('.img') || lowerName.endsWith('.bin');
+    const isHeavyTamper = lowerName.includes('splic') || lowerName.includes('heavy') || lowerName.includes('cadence_cut') || lowerName.includes('inaccurate');
+    const isModified = isHeavyTamper || lowerName.includes('tamper') || lowerName.includes('fake') || lowerName.includes('edited') || lowerName.includes('photoshop') || lowerName.includes('modify') || !!baselineFile;
+    const isAuthentic = !isCorrupted && !isModified;
+
+    const hasChanges = isModified;
+    const hasHeavyChanges = isHeavyTamper;
+    const hasSeriousIssues = isCorrupted || isHeavyTamper || isFatalCorrupt;
+    const isAccurateForCase = isAuthentic;
+
+    let caseVerdictCategory = 'AUTHENTIC_NO_CHANGES';
+    let verdictHeadline = 'THIS FILE HAS NO CHANGES — VERIFIED AUTHENTIC & ACCURATE FOR THE CASE';
+    let verdictLabel = '✓ THIS FILE HAS NO CHANGES — VERIFIED AUTHENTIC';
+    let caseAccuracyLabel = 'ACCURATE FOR THE CASE';
+    let admissibilityStatus = 'ADMISSIBLE';
+
+    if (isFatalCorrupt) {
+      caseVerdictCategory = 'FATAL_CORRUPTION';
+      verdictHeadline = 'THIS FILE IS CRITICALLY CORRUPTED — FATAL DATA INTEGRITY FAILURE';
+      verdictLabel = '⛔ CRITICALLY CORRUPTED (NOT ACCURATE FOR CASE)';
+      caseAccuracyLabel = 'NOT ACCURATE FOR THE CASE';
+      admissibilityStatus = 'INADMISSIBLE';
+    } else if (isCorrupted) {
+      caseVerdictCategory = 'CORRUPTED_RECOVERED';
+      verdictHeadline = 'THIS FILE IS CORRUPTED — SECTOR DAMAGE & CARVED FRAGMENTS';
+      verdictLabel = '💾 THIS FILE IS CORRUPTED (RECOVERED FROM SECTORS)';
+      caseAccuracyLabel = 'NOT ACCURATE FOR THE CASE (COMPROMISED BITSTREAM)';
+      admissibilityStatus = 'CONDITIONAL_RECOVERY';
+    } else if (isHeavyTamper) {
+      caseVerdictCategory = 'HEAVY_CHANGES_INACCURATE';
+      verdictHeadline = 'THIS FILE CONTAINS SERIOUS ISSUES AND IS NOT ACCURATE FOR THE CASE';
+      verdictLabel = '🚨 HEAVY CHANGES DETECTED — FILE CONTAINS SERIOUS ISSUES';
+      caseAccuracyLabel = 'NOT ACCURATE FOR THE CASE';
+      admissibilityStatus = 'INADMISSIBLE';
+    } else if (isModified) {
+      caseVerdictCategory = 'MODIFIED_CHANGES';
+      verdictHeadline = 'THIS FILE IS MODIFIED — EXTERNAL CHANGES DETECTED';
+      verdictLabel = '⚠ THIS FILE IS MODIFIED — CHANGES DETECTED';
+      caseAccuracyLabel = 'NOT ACCURATE FOR THE CASE (ALTERED)';
+      admissibilityStatus = 'CONDITIONAL_SCRUTINY';
+    }
 
     // Pillar 1: Recovery
     const recoveryPillar = {
       is_corrupted: isCorrupted,
-      recovery_status: isCorrupted ? 'RECOVERED_FROM_SECTORS' : 'PRISTINE_BITSTREAM',
-      health_label: isCorrupted ? '⚠ CORRUPTED / RECOVERED' : '✓ HEALTHY STREAM',
-      fragments_found: isCorrupted ? 4 : 0,
-      fragments: isCorrupted ? [
+      is_severely_corrupted: isFatalCorrupt,
+      corruption_severity: isFatalCorrupt ? 'CRITICAL_UNREADABLE' : (isCorrupted ? 'MODERATE_CARVED' : 'NONE'),
+      recovery_status: isFatalCorrupt ? 'FATAL_CORRUPTION_FAILED' : (isCorrupted ? 'RECOVERED_FROM_SECTORS' : 'PRISTINE_BITSTREAM'),
+      health_label: isFatalCorrupt ? '⛔ FATAL SECTOR CORRUPTION' : (isCorrupted ? '⚠ THIS FILE IS CORRUPTED' : '✓ HEALTHY STREAM (NOT CORRUPTED)'),
+      fragments_found: isFatalCorrupt ? 0 : (isCorrupted ? 4 : 0),
+      fragments: isFatalCorrupt ? [] : (isCorrupted ? [
         { fragment_id: 'FRAG-001', codec_format: 'H.264 / AVC Elementary', start_offset: 0x00042000, end_offset: 0x001a4000, byte_length: 1450000, keyframes: 18, resolution: '1920x1080', playable_status: 'RECONSTRUCTED' },
         { fragment_id: 'FRAG-002', codec_format: 'DHAV Container Atom', start_offset: 0x001a4000, end_offset: 0x002c0000, byte_length: 1163264, keyframes: 12, resolution: '1920x1080', playable_status: 'RECONSTRUCTED' },
         { fragment_id: 'FRAG-003', codec_format: 'JPEG EXIF Frame', start_offset: 0x002c0000, end_offset: 0x00320000, byte_length: 393216, keyframes: 1, resolution: '1280x720', playable_status: 'RECONSTRUCTED' },
         { fragment_id: 'FRAG-004', codec_format: 'H.264 NALU Cluster', start_offset: 0x00320000, end_offset: 0x00410000, byte_length: 983040, keyframes: 14, resolution: '1920x1080', playable_status: 'RECONSTRUCTED' }
-      ] : [],
-      details: isCorrupted ? 'Recovered 4 elementary video/image clusters from raw unallocated sectors (00 00 00 01 NALU and DHAV headers carved).' : 'Bitstream container intact. Zero sector bad blocks detected.'
+      ] : []),
+      details: isFatalCorrupt
+        ? 'Fatal cluster failure: Zero valid NALU or container headers found. Raw sectors corrupted beyond recovery.'
+        : (isCorrupted
+            ? 'This file is corrupted: Recovered 4 elementary video/image clusters from raw unallocated sectors (NALU 00 00 00 01 carved).'
+            : 'Bitstream container intact. Zero sector bad blocks detected. Stream is 100% healthy.')
     };
 
     // Pillar 2: AI Detection
@@ -566,10 +614,12 @@ function handleMockRequest(endpoint, options = {}) {
     ];
 
     const detectionPillar = {
-      detections_count: detections.length,
-      categories_found: Array.from(new Set(detections.map(d => d.detection_type))),
-      detections: detections,
-      summary: `Identified ${detections.length} forensic targets across ${Array.from(new Set(detections.map(d => d.detection_type))).join(', ')} categories.`
+      detections_count: isFatalCorrupt ? 0 : detections.length,
+      categories_found: isFatalCorrupt ? [] : Array.from(new Set(detections.map(d => d.detection_type))),
+      detections: isFatalCorrupt ? [] : detections,
+      summary: isFatalCorrupt
+        ? 'No forensic targets detectable due to severe bitstream damage.'
+        : `Identified ${detections.length} forensic targets across ${Array.from(new Set(detections.map(d => d.detection_type))).join(', ')} categories.`
     };
 
     // Pillar 3: Timeline
@@ -583,35 +633,52 @@ function handleMockRequest(endpoint, options = {}) {
     ];
 
     const timelinePillar = {
-      duration_seconds: isImage ? 0.0 : 15.0,
-      fps: isImage ? 0.0 : 25.0,
-      events_count: timelineEvents.length,
-      timeline_events: timelineEvents,
-      is_continuous: !hasTamperHint
+      duration_seconds: isImage ? 0.0 : (isFatalCorrupt ? 0.0 : 15.0),
+      fps: isImage ? 0.0 : (isFatalCorrupt ? 0.0 : 25.0),
+      events_count: isFatalCorrupt ? 0 : timelineEvents.length,
+      timeline_events: isFatalCorrupt ? [] : timelineEvents,
+      is_continuous: !isHeavyTamper
     };
 
     // Pillar 4: Tamper / Changes Detection
+    const modificationsList = isHeavyTamper ? [
+      { category: 'Frame Splicing / Deletion', severity: 'CRITICAL', title: 'Temporal Scene Cut at T: 00:04.2s - 00:06.5s', details: 'Visual motion flux jump detected across keyframes. 58 frames deleted or spliced.', timestamps_sec: [4.2, 6.5] },
+      { category: 'Transcoder Software Injected', severity: 'CRITICAL', title: 'Non-Camera Encoder: Lavf (FFmpeg)', details: 'Found encoder marker Lavf in MP4 moov atom. Third-party editor export confirmed.' },
+      { category: 'GOP Cadence Discontinuity', severity: 'HIGH', title: 'Broken I-Frame Cadence at Offset 0x01E400', details: 'Surveillance DVR 25fps closed GOP interval violated.' },
+      { category: 'Timeline Alteration', severity: 'CRITICAL', title: 'OSD Clock Desynchronization', details: 'OSD burned-in timestamp skips 2.3 seconds between consecutive frames.' }
+    ] : (isModified ? (isImage ? [
+      { category: 'Software Editor Signature', severity: 'CRITICAL', title: 'Commercial Editor: Adobe Photoshop 2024', details: 'Binary headers contain Adobe Photoshop software signature. CCTV camera firmware does not inject desktop editor tags.' },
+      { category: 'Pixel Error Level Analysis (ELA)', severity: 'HIGH', title: 'Compression Discontinuity (Spliced Region)', details: 'High-frequency ELA variance (18.4%) localized in quadrant [X: 0.34, Y: 0.22, W: 0.16, H: 0.12]. Pasted element confirmed.', bounding_box: [0.34, 0.22, 0.16, 0.12] },
+      { category: 'Quantization Table Discrepancy', severity: 'MEDIUM', title: 'Non-Hardware DQT Table Mismatch', details: 'Luminance quantization does not match hardware sensor profiles, indicating secondary re-compression.' }
+    ] : [
+      { category: 'Transcoder Software Injected', severity: 'CRITICAL', title: 'Non-Camera Encoder: Lavf (FFmpeg)', details: 'Found encoder marker Lavf in MP4 moov container atom.' },
+      { category: 'Quantization Variance', severity: 'MEDIUM', title: 'Secondary Encoding Re-compression', details: 'Bitrate variability exceeds camera ASIC baseline.' }
+    ]) : []);
+
     const tamperPillar = {
-      has_changed: hasTamperHint,
-      tamper_detected: hasTamperHint,
-      verdict: hasTamperHint ? 'MODIFICATION_DETECTED' : 'AUTHENTIC_ORIGINAL',
-      verdict_label: hasTamperHint ? '⚠ CHANGES DETECTED (FILE ALTERED)' : '✓ VERIFIED AUTHENTIC (NO CHANGES)',
-      summary: hasTamperHint
-        ? (isImage ? 'Alterations detected: Photo contains Photoshop metadata and ELA pixel compression variance.' : 'Alterations detected: Video has Lavf transcoder marker and temporal frame cut at T: 00:04.2s.')
-        : 'Bitstream integrity verified. Dual SHA-256 and MD5 hashes match original baseline with 0 modifications.',
-      changes_count: hasTamperHint ? 3 : 0,
-      changes_detected: hasTamperHint ? (isImage ? [
-        { category: 'Software Editor Signature', severity: 'CRITICAL', title: 'Commercial Editor: Adobe Photoshop 2024', details: 'Binary headers contain Adobe Photoshop software signature. CCTV camera firmware does not inject desktop editor tags.' },
-        { category: 'Pixel Error Level Analysis (ELA)', severity: 'HIGH', title: 'Compression Discontinuity (Spliced Region)', details: 'High-frequency ELA variance (18.4%) localized in quadrant [X: 0.34, Y: 0.22, W: 0.16, H: 0.12]. Pasted element confirmed.', bounding_box: [0.34, 0.22, 0.16, 0.12] },
-        { category: 'Quantization Table Discrepancy', severity: 'MEDIUM', title: 'Non-Hardware DQT Table Mismatch', details: 'Luminance quantization does not match hardware sensor profiles, indicating secondary re-compression.' }
-      ] : [
-        { category: 'Transcoder Software Injected', severity: 'CRITICAL', title: 'Non-Camera Encoder: Lavf (FFmpeg)', details: 'Found encoder marker Lavf in MP4 moov container atom. Camera hardware writes elementary streams directly.' },
-        { category: 'Frame Splicing / Deletion', severity: 'HIGH', title: 'Temporal Scene Cut at T: 00:04.2s - 00:06.5s', details: 'Visual motion flux jump detected across consecutive keyframes. 58 frames deleted or spliced.', timestamps_sec: [4.2, 6.5] },
-        { category: 'GOP Cadence Discontinuity', severity: 'MEDIUM', title: 'Broken I-Frame Cadence at Offset 0x01E400', details: 'Surveillance DVR 25fps closed GOP interval violated.' }
-      ]) : [],
+      has_changed: hasChanges,
+      tamper_detected: hasChanges,
+      has_heavy_changes: hasHeavyChanges,
+      has_serious_issues: hasSeriousIssues,
+      is_accurate_for_case: isAccurateForCase,
+      case_verdict_category: caseVerdictCategory,
+      case_accuracy_label: caseAccuracyLabel,
+      admissibility_status: admissibilityStatus,
+      verdict: hasChanges ? 'MODIFICATION_DETECTED' : 'AUTHENTIC_ORIGINAL',
+      verdict_label: verdictLabel,
+      verdict_headline: verdictHeadline,
+      summary: hasHeavyChanges
+        ? 'HEAVY CHANGES DETECTED: This file contains serious tampering issues (spliced frames, Lavf encoder, timeline jump). THIS FILE IS NOT ACCURATE FOR THE CASE.'
+        : (hasChanges
+            ? 'CHANGES DETECTED: This file is modified. External editor signatures or compression discrepancies detected.'
+            : (isCorrupted
+                ? 'CORRUPTION DETECTED: Bitstream corrupted with sector bad blocks. Recovered fragments contain serious integrity defects.'
+                : 'VERIFIED AUTHENTIC: This file has NO changes. Dual SHA-256 and MD5 hashes match original baseline with 0 modifications.')),
+      changes_count: modificationsList.length,
+      changes_detected: modificationsList,
       ela_heatmap: {
-        localized_bounding_box: hasTamperHint && isImage ? [0.34, 0.22, 0.16, 0.12] : null,
-        compression_variance_pct: hasTamperHint ? 18.4 : 0.8
+        localized_bounding_box: (isModified || isHeavyTamper) && isImage ? [0.34, 0.22, 0.16, 0.12] : null,
+        compression_variance_pct: hasHeavyChanges ? 28.5 : (hasChanges ? 18.4 : 0.8)
       }
     };
 
@@ -622,6 +689,17 @@ function handleMockRequest(endpoint, options = {}) {
       media_classification: isImage ? 'Picture / Photo' : (isCorrupted ? 'Corrupted Stream / Disk Dump' : 'Surveillance Video'),
       sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
       md5: 'a7c2e81902bf89c1d04e5a9102c3d4e5',
+      is_corrupted: isCorrupted,
+      is_severely_corrupted: isFatalCorrupt,
+      has_changes: hasChanges,
+      has_heavy_changes: hasHeavyChanges,
+      has_serious_issues: hasSeriousIssues,
+      is_accurate_for_case: isAccurateForCase,
+      case_verdict_category: caseVerdictCategory,
+      verdict_headline: verdictHeadline,
+      verdict_label: verdictLabel,
+      case_accuracy_label: caseAccuracyLabel,
+      admissibility_status: admissibilityStatus,
       pillars: {
         recovery: recoveryPillar,
         detection: detectionPillar,

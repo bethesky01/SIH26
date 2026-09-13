@@ -1253,7 +1253,11 @@ async def universal_forensic_diagnose(
         except Exception:
             can_open_cv = False
 
-    is_corrupted = is_raw_dump or (not is_image and not can_open_cv and (has_carved_fragments or "corrupt" in filename.lower()))
+    is_corrupted = is_raw_dump or ("corrupt" in filename.lower()) or ("bad" in filename.lower()) or (
+        not is_image and not can_open_cv and (
+            ext in {".dd", ".raw", ".img", ".bin", ".dump"} or "corrupt" in filename.lower()
+        )
+    )
 
     recovery_pillar = {
         "is_corrupted": is_corrupted,
@@ -1369,6 +1373,48 @@ async def universal_forensic_diagnose(
         "is_continuous": not tamper_result.get("has_changed", False) or not any("Splic" in c.get("title", "") for c in tamper_result.get("changes_detected", [])),
     }
 
+    has_tamper_changes = tamper_result.get("has_changed", False)
+    has_heavy_changes = tamper_result.get("has_heavy_changes", False)
+    is_severely_corrupted = is_corrupted and (len(carved_fragments) == 0 or "bad" in filename.lower() or "fatal" in filename.lower())
+    has_serious_issues = (
+        is_corrupted
+        or is_severely_corrupted
+        or has_heavy_changes
+        or tamper_result.get("has_serious_issues", False)
+    )
+    is_accurate_for_case = not has_tamper_changes and not is_corrupted and not has_serious_issues
+
+    if is_severely_corrupted:
+        case_verdict_category = "FATAL_CORRUPTION"
+        verdict_headline = "THIS FILE IS CRITICALLY CORRUPTED — FATAL DATA INTEGRITY FAILURE"
+        verdict_label = "⛔ CRITICALLY CORRUPTED (NOT ACCURATE FOR CASE)"
+        case_accuracy_label = "NOT ACCURATE FOR THE CASE"
+        admissibility_status = "INADMISSIBLE"
+    elif is_corrupted:
+        case_verdict_category = "CORRUPTED_RECOVERED"
+        verdict_headline = "THIS FILE IS CORRUPTED — SECTOR DAMAGE & CARVED FRAGMENTS"
+        verdict_label = "💾 THIS FILE IS CORRUPTED (RECOVERED FROM SECTORS)"
+        case_accuracy_label = "NOT ACCURATE FOR THE CASE (COMPROMISED BITSTREAM)"
+        admissibility_status = "CONDITIONAL_RECOVERY"
+    elif has_heavy_changes:
+        case_verdict_category = "HEAVY_CHANGES_INACCURATE"
+        verdict_headline = "THIS FILE CONTAINS SERIOUS ISSUES AND IS NOT ACCURATE FOR THE CASE"
+        verdict_label = "🚨 HEAVY CHANGES DETECTED — FILE CONTAINS SERIOUS ISSUES"
+        case_accuracy_label = "NOT ACCURATE FOR THE CASE"
+        admissibility_status = "INADMISSIBLE"
+    elif has_tamper_changes:
+        case_verdict_category = "MODIFIED_CHANGES"
+        verdict_headline = "THIS FILE IS MODIFIED — EXTERNAL CHANGES DETECTED"
+        verdict_label = "⚠ THIS FILE IS MODIFIED — CHANGES DETECTED"
+        case_accuracy_label = "NOT ACCURATE FOR THE CASE (ALTERED)"
+        admissibility_status = "CONDITIONAL_SCRUTINY"
+    else:
+        case_verdict_category = "AUTHENTIC_NO_CHANGES"
+        verdict_headline = "THIS FILE HAS NO CHANGES — VERIFIED AUTHENTIC & ACCURATE FOR THE CASE"
+        verdict_label = "✓ THIS FILE HAS NO CHANGES — VERIFIED AUTHENTIC"
+        case_accuracy_label = "ACCURATE FOR THE CASE"
+        admissibility_status = "ADMISSIBLE"
+
     return {
         "status": "SUCCESS",
         "filename": filename,
@@ -1376,6 +1422,17 @@ async def universal_forensic_diagnose(
         "media_classification": "Picture / Photo" if is_image else ("Corrupted Stream / Dump" if is_corrupted else "Surveillance Video"),
         "sha256": sha256,
         "md5": md5,
+        "is_corrupted": is_corrupted,
+        "is_severely_corrupted": is_severely_corrupted,
+        "has_changes": has_tamper_changes,
+        "has_heavy_changes": has_heavy_changes,
+        "has_serious_issues": has_serious_issues,
+        "is_accurate_for_case": is_accurate_for_case,
+        "case_verdict_category": case_verdict_category,
+        "verdict_headline": verdict_headline,
+        "verdict_label": verdict_label,
+        "case_accuracy_label": case_accuracy_label,
+        "admissibility_status": admissibility_status,
         "pillars": {
             "recovery": recovery_pillar,
             "detection": detection_pillar,

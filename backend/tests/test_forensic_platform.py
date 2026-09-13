@@ -459,7 +459,7 @@ def test_universal_forensic_diagnose_4_pillars():
     assert img_diag["media_classification"] == "Picture / Photo"
     assert img_diag["pillars"]["detection"]["detections_count"] >= 2
 
-    # 3. Test Corrupted Dump with Carving Recovery
+    # 3. Test Corrupted Dump with Carving Recovery (Negative Result: Corrupted / Serious Issues)
     corrupt_dump = io.BytesIO(b"\x00\x00\x00\x01\x67\x42\x00\x1fRAW_CARVED_UNALLOCATED_STREAM" * 30)
     res_corrupt = client.post(
         "/api/forensic/universal-diagnose",
@@ -469,5 +469,25 @@ def test_universal_forensic_diagnose_4_pillars():
     corrupt_diag = res_corrupt.json()
     assert corrupt_diag["pillars"]["recovery"]["is_corrupted"] is True
     assert corrupt_diag["pillars"]["recovery"]["fragments_found"] >= 1
+    assert corrupt_diag["is_corrupted"] is True
+    assert corrupt_diag["has_serious_issues"] is True
+    assert corrupt_diag["is_accurate_for_case"] is False
+    assert "CORRUPTED" in corrupt_diag["verdict_headline"]
+
+    # 4. Test Heavy Changes & Spliced Tamper (Negative Result: Heavy Changes / Inaccurate for Case)
+    spliced_video = io.BytesIO(b"Lavf\x00\x00\x00\x20ftypisom\x00\x00\x00\x10mdatSPLICED_HEAVY_TAMPER_STREAM" * 50)
+    res_spliced = client.post(
+        "/api/forensic/universal-diagnose",
+        files={"file": ("tampered_spliced_cctv_lavf.mp4", spliced_video, "video/mp4")}
+    )
+    assert res_spliced.status_code == 200
+    spliced_diag = res_spliced.json()
+    assert spliced_diag["has_changes"] is True
+    assert spliced_diag["has_heavy_changes"] is True
+    assert spliced_diag["has_serious_issues"] is True
+    assert spliced_diag["is_accurate_for_case"] is False
+    assert spliced_diag["case_verdict_category"] == "HEAVY_CHANGES_INACCURATE"
+    assert spliced_diag["case_accuracy_label"] == "NOT ACCURATE FOR THE CASE"
+    assert "SERIOUS ISSUES" in spliced_diag["verdict_headline"]
 
 
