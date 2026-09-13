@@ -10,11 +10,13 @@ import {
   Cpu,
   Lock,
   FolderOpen,
+  Sparkles,
 } from 'lucide-react';
 
 export default function Sidebar({ activeTab, onTabChange, stats }) {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'universal', label: 'All-in-One Diagnostic', icon: Sparkles, tag: '4 Pillars' },
     { id: 'adapters', label: 'Device & Filesystem', icon: Cpu, tag: 'Mod 1 & 3' },
     { id: 'evidence', label: 'Forensic Acquisition', icon: FolderOpen, tag: 'Mod 2' },
     { id: 'player', label: 'Video Extraction & AI', icon: Video, tag: 'Mod 4 & 8' },

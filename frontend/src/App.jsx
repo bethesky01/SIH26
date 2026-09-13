@@ -10,6 +10,7 @@ import LedgerView from './views/LedgerView';
 import RecoveryView from './views/RecoveryView';
 import ReportsView from './views/ReportsView';
 import AdaptersView from './views/AdaptersView';
+import UniversalScannerView from './views/UniversalScannerView';
 import { api } from './services/api';
 
 export default function App() {
@@ -174,6 +175,10 @@ export default function App() {
               onNavigate={setActiveTab}
               onInspectEvidence={handleInspectEvidence}
             />
+          )}
+
+          {activeTab === 'universal' && (
+            <UniversalScannerView onNavigate={setActiveTab} />
           )}
 
           {activeTab === 'evidence' && (

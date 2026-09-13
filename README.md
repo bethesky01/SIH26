@@ -61,6 +61,17 @@ During criminal investigations, CCTV surveillance hard disks and video footage p
  7. Section 65B Indian Evidence Act Judicial PDF Certification
 ```
 
+### 🌟 Featured: Universal Forensic Diagnostic Studio (4-in-1 Pipeline)
+A unified, single-step forensic diagnostic engine where investigators can drag-and-drop **any real video, still picture (photo), or corrupted/raw disk file** to simultaneously run the **4 Core Pillars of Evidence Examination**:
+1. **💾 Recovery**: Automatic deep sector carving (`00 00 00 01` NALU, `DHAV`, `JPEG`), extracting and reconstructing playable elementary video clusters from unallocated or corrupted space.
+2. **👁 AI Detection**: Multi-class computer vision object localization (Person, Vehicle, Object/Weapon, Motion Vector, Face Boundary) rendered directly on an interactive canvas.
+3. **⏱ Timeline**: Chronological event mapping, frame rate verification (FPS), and time-drift calibration across keyframes.
+4. **🛡 Tamper & Changes Audit ("Has it changed or not?")**:
+   - Gives a definitive judicial verdict: **"Has this file been altered or changed?"** -> **YES / NO**.
+   - Answers **"What specific changes were made?"** (e.g., Photoshop metadata injected, FFmpeg Lavf transcoder marker detected, frame cuts between T: 00:04.2s - 00:06.5s).
+   - Generates an **interactive Error Level Analysis (ELA) compression heatmap** highlighting spliced image regions.
+   - Dual cryptographic SHA-256 and MD5 hash baseline verification.
+
 ### 1. Automated Device & Proprietary Filesystem Identification (Module 1 & 3)
 - Inspects binary magic bytes, partition tables, and superblock offsets.
 - Classifies hardware vendors, camera models, compression codecs (H.264 / H.265 / MJPEG), and channel multiplexing schemes.

@@ -423,3 +423,51 @@ def test_media_tamper_and_modification_detection():
     assert comp_data["has_changed"] is True
     assert comp_data["first_modified_byte_offset"] != "None"
 
+def test_universal_forensic_diagnose_4_pillars():
+    from fastapi.testclient import TestClient
+    from backend.app.main import app
+    import io
+
+    client = TestClient(app)
+
+    # 1. Test Video with 4 Pillars (Recovery, Detection, Timeline, Tamper)
+    fake_video = io.BytesIO(b"\x00\x00\x00\x20ftypisom\x00\x00\x00\x10mdatMOCK_VIDEO_DATA" * 50)
+    res_vid = client.post(
+        "/api/forensic/universal-diagnose",
+        files={"file": ("surveillance_hallway.mp4", fake_video, "video/mp4")}
+    )
+    assert res_vid.status_code == 200
+    diag = res_vid.json()
+    assert diag["status"] == "SUCCESS"
+    assert "pillars" in diag
+    assert "recovery" in diag["pillars"]
+    assert "detection" in diag["pillars"]
+    assert "timeline" in diag["pillars"]
+    assert "tamper" in diag["pillars"]
+    assert diag["pillars"]["detection"]["detections_count"] >= 3
+    assert diag["pillars"]["timeline"]["events_count"] >= 2
+
+    # 2. Test Photo with 4 Pillars
+    fake_photo = io.BytesIO(b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00`\x00`\x00\x00\xff\xda_RASTER_PIXELS")
+    res_img = client.post(
+        "/api/forensic/universal-diagnose",
+        files={"file": ("evidence_snapshot.jpg", fake_photo, "image/jpeg")}
+    )
+    assert res_img.status_code == 200
+    img_diag = res_img.json()
+    assert img_diag["status"] == "SUCCESS"
+    assert img_diag["media_classification"] == "Picture / Photo"
+    assert img_diag["pillars"]["detection"]["detections_count"] >= 2
+
+    # 3. Test Corrupted Dump with Carving Recovery
+    corrupt_dump = io.BytesIO(b"\x00\x00\x00\x01\x67\x42\x00\x1fRAW_CARVED_UNALLOCATED_STREAM" * 30)
+    res_corrupt = client.post(
+        "/api/forensic/universal-diagnose",
+        files={"file": ("corrupted_cctv_block.raw", corrupt_dump, "application/octet-stream")}
+    )
+    assert res_corrupt.status_code == 200
+    corrupt_diag = res_corrupt.json()
+    assert corrupt_diag["pillars"]["recovery"]["is_corrupted"] is True
+    assert corrupt_diag["pillars"]["recovery"]["fragments_found"] >= 1
+
+

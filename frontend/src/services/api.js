@@ -524,6 +524,113 @@ function handleMockRequest(endpoint, options = {}) {
     };
   }
 
+  // 9.5 Universal Forensic Diagnostic (4 Pillars: Recovery, Detect, Timeline, Tamper)
+  if (path === '/forensic/universal-diagnose') {
+    let file = null;
+    let baselineFile = null;
+    if (options.body instanceof FormData) {
+      file = options.body.get('file');
+      baselineFile = options.body.get('baseline_file');
+    }
+    const fileName = file?.name || 'forensic_stream.mp4';
+    const lowerName = fileName.toLowerCase();
+    const isImage = lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg') || lowerName.endsWith('.png') || lowerName.endsWith('.webp') || lowerName.includes('photo') || lowerName.includes('pic');
+    const isCorrupted = lowerName.includes('corrupt') || lowerName.endsWith('.dd') || lowerName.endsWith('.raw') || lowerName.endsWith('.img') || lowerName.endsWith('.bin');
+    const hasTamperHint = lowerName.includes('tamper') || lowerName.includes('fake') || lowerName.includes('edited') || lowerName.includes('splic') || !!baselineFile;
+
+    // Pillar 1: Recovery
+    const recoveryPillar = {
+      is_corrupted: isCorrupted,
+      recovery_status: isCorrupted ? 'RECOVERED_FROM_SECTORS' : 'PRISTINE_BITSTREAM',
+      health_label: isCorrupted ? '⚠ CORRUPTED / RECOVERED' : '✓ HEALTHY STREAM',
+      fragments_found: isCorrupted ? 4 : 0,
+      fragments: isCorrupted ? [
+        { fragment_id: 'FRAG-001', codec_format: 'H.264 / AVC Elementary', start_offset: 0x00042000, end_offset: 0x001a4000, byte_length: 1450000, keyframes: 18, resolution: '1920x1080', playable_status: 'RECONSTRUCTED' },
+        { fragment_id: 'FRAG-002', codec_format: 'DHAV Container Atom', start_offset: 0x001a4000, end_offset: 0x002c0000, byte_length: 1163264, keyframes: 12, resolution: '1920x1080', playable_status: 'RECONSTRUCTED' },
+        { fragment_id: 'FRAG-003', codec_format: 'JPEG EXIF Frame', start_offset: 0x002c0000, end_offset: 0x00320000, byte_length: 393216, keyframes: 1, resolution: '1280x720', playable_status: 'RECONSTRUCTED' },
+        { fragment_id: 'FRAG-004', codec_format: 'H.264 NALU Cluster', start_offset: 0x00320000, end_offset: 0x00410000, byte_length: 983040, keyframes: 14, resolution: '1920x1080', playable_status: 'RECONSTRUCTED' }
+      ] : [],
+      details: isCorrupted ? 'Recovered 4 elementary video/image clusters from raw unallocated sectors (00 00 00 01 NALU and DHAV headers carved).' : 'Bitstream container intact. Zero sector bad blocks detected.'
+    };
+
+    // Pillar 2: AI Detection
+    const detections = isImage ? [
+      { detection_id: 'DET-UNI-001', timestamp_sec: 0.0, timestamp_str: 'Still Photo', detection_type: 'Person', label: 'Person: Suspect in Perimeter', confidence: 0.96, bbox_x: 0.28, bbox_y: 0.22, bbox_w: 0.24, bbox_h: 0.55 },
+      { detection_id: 'DET-UNI-002', timestamp_sec: 0.0, timestamp_str: 'Still Photo', detection_type: 'Object', label: 'Object / Thing: Duffle Bag', confidence: 0.91, bbox_x: 0.52, bbox_y: 0.52, bbox_w: 0.16, bbox_h: 0.19 },
+      { detection_id: 'DET-UNI-003', timestamp_sec: 0.0, timestamp_str: 'Still Photo', detection_type: 'Face', label: 'Face: Facial Landmark Region', confidence: 0.89, bbox_x: 0.35, bbox_y: 0.26, bbox_w: 0.10, bbox_h: 0.13 }
+    ] : [
+      { detection_id: 'DET-UNI-001', timestamp_sec: 2.1, timestamp_str: '00:02.1', detection_type: 'Person', label: 'Person: Intruder in Restricted Zone', confidence: 0.95, bbox_x: 0.24, bbox_y: 0.20, bbox_w: 0.22, bbox_h: 0.56 },
+      { detection_id: 'DET-UNI-002', timestamp_sec: 4.8, timestamp_str: '00:04.8', detection_type: 'Vehicle', label: 'Vehicle: White SUV (Plate: DL-8C-9021)', confidence: 0.92, bbox_x: 0.50, bbox_y: 0.38, bbox_w: 0.38, bbox_h: 0.32 },
+      { detection_id: 'DET-UNI-003', timestamp_sec: 7.4, timestamp_str: '00:07.4', detection_type: 'Object', label: 'Object / Weapon: Metallic Implement', confidence: 0.88, bbox_x: 0.38, bbox_y: 0.50, bbox_w: 0.14, bbox_h: 0.16 },
+      { detection_id: 'DET-UNI-004', timestamp_sec: 11.2, timestamp_str: '00:11.2', detection_type: 'Motion', label: 'Motion: Perimeter Gate Breach Vector', confidence: 0.94, bbox_x: 0.10, bbox_y: 0.15, bbox_w: 0.40, bbox_h: 0.65 }
+    ];
+
+    const detectionPillar = {
+      detections_count: detections.length,
+      categories_found: Array.from(new Set(detections.map(d => d.detection_type))),
+      detections: detections,
+      summary: `Identified ${detections.length} forensic targets across ${Array.from(new Set(detections.map(d => d.detection_type))).join(', ')} categories.`
+    };
+
+    // Pillar 3: Timeline
+    const timelineEvents = isImage ? [
+      { event_id: 'EVT-001', time_offset_sec: 0.0, osd_timestamp: '2026-08-22 14:15:00', normalized_timestamp: '2026-08-22 14:15:00 UTC', camera_name: 'EXIF Sensor Baseline', event_type: 'Still Snapshot', description: 'Raw pixel matrix acquired with authenticated EXIF timestamp.' }
+    ] : [
+      { event_id: 'EVT-001', time_offset_sec: 0.0, osd_timestamp: '22:14:10.000', normalized_timestamp: '22:14:10.000 UTC', camera_name: 'CCTV Channel 01', event_type: 'Stream Ingest Start', description: 'Continuous surveillance stream initiation.' },
+      { event_id: 'EVT-002', time_offset_sec: 4.8, osd_timestamp: '22:14:14.800', normalized_timestamp: '22:14:14.800 UTC', camera_name: 'CCTV Channel 01', event_type: 'Vehicle Arrival Event', description: 'Vehicle detected entering secondary perimeter corridor.' },
+      { event_id: 'EVT-003', time_offset_sec: 11.2, osd_timestamp: '22:14:21.200', normalized_timestamp: '22:14:21.200 UTC', camera_name: 'CCTV Channel 01', event_type: 'Perimeter Motion Event', description: 'Motion spike registered at gate latch zone.' },
+      { event_id: 'EVT-004', time_offset_sec: 15.0, osd_timestamp: '22:14:25.000', normalized_timestamp: '22:14:25.000 UTC', camera_name: 'CCTV Channel 01', event_type: 'Stream Segment End', description: 'End of segment. Cryptographic hash recorded to audit trail.' }
+    ];
+
+    const timelinePillar = {
+      duration_seconds: isImage ? 0.0 : 15.0,
+      fps: isImage ? 0.0 : 25.0,
+      events_count: timelineEvents.length,
+      timeline_events: timelineEvents,
+      is_continuous: !hasTamperHint
+    };
+
+    // Pillar 4: Tamper / Changes Detection
+    const tamperPillar = {
+      has_changed: hasTamperHint,
+      tamper_detected: hasTamperHint,
+      verdict: hasTamperHint ? 'MODIFICATION_DETECTED' : 'AUTHENTIC_ORIGINAL',
+      verdict_label: hasTamperHint ? '⚠ CHANGES DETECTED (FILE ALTERED)' : '✓ VERIFIED AUTHENTIC (NO CHANGES)',
+      summary: hasTamperHint
+        ? (isImage ? 'Alterations detected: Photo contains Photoshop metadata and ELA pixel compression variance.' : 'Alterations detected: Video has Lavf transcoder marker and temporal frame cut at T: 00:04.2s.')
+        : 'Bitstream integrity verified. Dual SHA-256 and MD5 hashes match original baseline with 0 modifications.',
+      changes_count: hasTamperHint ? 3 : 0,
+      changes_detected: hasTamperHint ? (isImage ? [
+        { category: 'Software Editor Signature', severity: 'CRITICAL', title: 'Commercial Editor: Adobe Photoshop 2024', details: 'Binary headers contain Adobe Photoshop software signature. CCTV camera firmware does not inject desktop editor tags.' },
+        { category: 'Pixel Error Level Analysis (ELA)', severity: 'HIGH', title: 'Compression Discontinuity (Spliced Region)', details: 'High-frequency ELA variance (18.4%) localized in quadrant [X: 0.34, Y: 0.22, W: 0.16, H: 0.12]. Pasted element confirmed.', bounding_box: [0.34, 0.22, 0.16, 0.12] },
+        { category: 'Quantization Table Discrepancy', severity: 'MEDIUM', title: 'Non-Hardware DQT Table Mismatch', details: 'Luminance quantization does not match hardware sensor profiles, indicating secondary re-compression.' }
+      ] : [
+        { category: 'Transcoder Software Injected', severity: 'CRITICAL', title: 'Non-Camera Encoder: Lavf (FFmpeg)', details: 'Found encoder marker Lavf in MP4 moov container atom. Camera hardware writes elementary streams directly.' },
+        { category: 'Frame Splicing / Deletion', severity: 'HIGH', title: 'Temporal Scene Cut at T: 00:04.2s - 00:06.5s', details: 'Visual motion flux jump detected across consecutive keyframes. 58 frames deleted or spliced.', timestamps_sec: [4.2, 6.5] },
+        { category: 'GOP Cadence Discontinuity', severity: 'MEDIUM', title: 'Broken I-Frame Cadence at Offset 0x01E400', details: 'Surveillance DVR 25fps closed GOP interval violated.' }
+      ]) : [],
+      ela_heatmap: {
+        localized_bounding_box: hasTamperHint && isImage ? [0.34, 0.22, 0.16, 0.12] : null,
+        compression_variance_pct: hasTamperHint ? 18.4 : 0.8
+      }
+    };
+
+    return {
+      status: 'SUCCESS',
+      filename: fileName,
+      file_size: file?.size || 3412000,
+      media_classification: isImage ? 'Picture / Photo' : (isCorrupted ? 'Corrupted Stream / Disk Dump' : 'Surveillance Video'),
+      sha256: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+      md5: 'a7c2e81902bf89c1d04e5a9102c3d4e5',
+      pillars: {
+        recovery: recoveryPillar,
+        detection: detectionPillar,
+        timeline: timelinePillar,
+        tamper: tamperPillar
+      }
+    };
+  }
+
   // 10. Custody Blockchain Ledger & Simplified Audit Trail
   if (path === '/custody/audit-trail') {
     return mockAuditTrail;
@@ -673,6 +780,9 @@ export const api = {
   verifyIntegrity: (evidenceId) => request(`/integrity/verify/${encodeURIComponent(evidenceId)}`, { method: 'POST' }),
   simulateTamper: (evidenceId) => request(`/integrity/simulate-tamper/${encodeURIComponent(evidenceId)}`, { method: 'POST' }),
   analyzeMediaTamper: (formData) => request('/integrity/analyze-media', { method: 'POST', body: formData }),
+
+  // Universal 4-in-1 Diagnostic (Recovery, Detection, Timeline, Tamper Changes)
+  universalDiagnose: (formData) => request('/forensic/universal-diagnose', { method: 'POST', body: formData }),
 
   // Blockchain Audit Ledger & Simplified Custody Trail
   getCustodyLedger: (caseId) => request(`/custody/${encodeURIComponent(caseId)}`),

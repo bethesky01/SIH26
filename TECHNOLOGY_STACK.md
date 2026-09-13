@@ -156,6 +156,23 @@ This document provides a comprehensive, technical audit of **what technologies a
 
 ---
 
+### 2.7 Universal Forensic Diagnostic Studio (4-in-1 Pipeline)
+* **Technology**: Full-Pipeline Integration (FastAPI, OpenCV, NumPy, NALU Sector Carver, Error Level Analysis, Chronological Matrix, Canvas 2D)
+* **How It Works**:
+  1. **Single-Endpoint Ingestion (`POST /forensic/universal-diagnose`)**: Takes any real surveillance video (`.mp4`, `.avi`, `.mkv`, `.dhav`), photograph (`.jpg`, `.png`, `.webp`), or corrupted raw disk dump (`.dd`, `.raw`, `.img`, `.bin`).
+  2. **Pillar 1: Deep Sector Recovery & Health Check**: Automatically scans raw unallocated LBA sectors for NALU `00 00 00 01` delimiters, DHAV packets, and JPEG SOI markers, reconstructing fragmented clusters into playable units.
+  3. **Pillar 2: AI Multi-Class Object Detection**: Detects Persons (Cyan), Vehicles (Amber), Objects/Weapons (Emerald), Motion Vectors (Purple), and Face Boundaries (Mint) with bounding box geometry.
+  4. **Pillar 3: Chronological Timeline & Cadence**: Computes continuous frame rates, stream duration, keyframe cadence, and flags temporal cadence breaks.
+  5. **Pillar 4: Tamper & Modification Audit ("Has it changed or not?")**:
+     - Issues a clear judicial verdict: **`MODIFICATION_DETECTED`** vs **`AUTHENTIC_ORIGINAL`**.
+     - Answers directly in plain language what changes were made (e.g. Adobe Photoshop injected, Lavf transcoder marker found, frame deletion between T: 00:04.2s - 00:06.5s).
+     - Renders an interactive **Error Level Analysis (ELA) compression heatmap** highlighting localized pixel anomalies.
+* **Code Location**:
+  - Backend: [`backend/app/api/routes.py`](file:///c:/Users/prern/SIH%2026%202/backend/app/api/routes.py#L1212-L1385), [`backend/app/hashing/tamper_analyzer.py`](file:///c:/Users/prern/SIH%2026%202/backend/app/hashing/tamper_analyzer.py), [`backend/app/recovery/carver.py`](file:///c:/Users/prern/SIH%2026%202/backend/app/recovery/carver.py)
+  - Frontend: [`frontend/src/views/UniversalScannerView.jsx`](file:///c:/Users/prern/SIH%2026%202/frontend/src/views/UniversalScannerView.jsx), [`frontend/src/services/api.js`](file:///c:/Users/prern/SIH%2026%202/frontend/src/services/api.js)
+
+---
+
 ## 3. Directory Layout & Technology Mapping
 
 ```

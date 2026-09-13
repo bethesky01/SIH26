@@ -19,6 +19,7 @@ import {
   Loader2,
   Gauge,
   ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -181,6 +182,63 @@ export default function DashboardView({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Universal 4-in-1 Diagnostic Spotlight Banner */}
+      <div
+        className="forensic-card"
+        style={{
+          background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%)',
+          border: '1px solid rgba(0, 229, 255, 0.35)',
+          padding: '20px 24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px',
+          boxShadow: '0 4px 20px rgba(0, 229, 255, 0.1)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div
+            style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #00e5ff 0%, #3b82f6 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#000',
+              flexShrink: 0
+            }}
+          >
+            <Sparkles size={24} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.12rem', fontWeight: 700, color: '#ffffff' }}>
+                Universal Forensic Diagnostic Studio
+              </h3>
+              <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(0, 229, 255, 0.2)', color: '#00e5ff', fontWeight: 700 }}>
+                NEW 4-IN-1
+              </span>
+            </div>
+            <p style={{ margin: '4px 0 0 0', fontSize: '0.84rem', color: '#cbd5e1' }}>
+              Upload any real video, photo, or corrupted clip to execute <strong>1. Deep Recovery</strong>, <strong>2. AI Detection</strong>, <strong>3. Frame Timeline</strong>, and <strong>4. Tamper Changes Audit</strong> ("Has it changed or not?").
+            </p>
+          </div>
+        </div>
+
+        <button
+          className="btn btn-primary"
+          style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}
+          onClick={() => onNavigate('universal')}
+        >
+          <Sparkles size={16} />
+          Launch 4-Pillar Studio
+          <ArrowRight size={15} />
+        </button>
       </div>
 
       {/* 2. SECTION: ACCURACY & VALIDATION MODULE (Dynamic Empirical Metrics) */}
