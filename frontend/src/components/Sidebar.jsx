@@ -1,36 +1,55 @@
 import React from 'react';
 import {
   LayoutDashboard,
-  Video,
-  Clock,
-  ShieldCheck,
-  Blocks,
-  FileSearch,
-  FileText,
-  Cpu,
-  Lock,
   FolderOpen,
-  Sparkles,
+  Video,
+  ShieldAlert,
+  FileText,
+  Lock,
 } from 'lucide-react';
 
 export default function Sidebar({ activeTab, onTabChange, stats }) {
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'universal', label: 'All-in-One Diagnostic', icon: Sparkles, tag: '4 Pillars' },
-    { id: 'adapters', label: 'Device & Filesystem', icon: Cpu, tag: 'Mod 1 & 3' },
-    { id: 'evidence', label: 'Forensic Acquisition', icon: FolderOpen, tag: 'Mod 2' },
-    { id: 'player', label: 'Video Extraction & AI', icon: Video, tag: 'Mod 4 & 8' },
-    { id: 'recovery', label: 'Deleted Video Recovery', icon: FileSearch, tag: 'Mod 5' },
-    { id: 'timeline', label: 'Multi-Camera Timeline', icon: Clock, tag: 'Mod 6 & 7', badge: stats?.timeline_events_count },
-    { id: 'integrity', label: 'Tamper & Integrity Scan', icon: ShieldCheck, tag: 'Mod 9' },
-    { id: 'ledger', label: 'Chain of Custody', icon: Blocks, tag: 'Mod 10', badge: stats?.custody_blocks_count },
-    { id: 'reports', label: 'Court Reports', icon: FileText, tag: 'Mod 11' },
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: LayoutDashboard,
+      desc: 'Case metrics & health',
+    },
+    {
+      id: 'evidence',
+      label: 'Evidence & Devices',
+      icon: FolderOpen,
+      desc: 'Catalog & filesystems',
+      badge: stats?.total_evidence,
+    },
+    {
+      id: 'video',
+      label: 'Video Studio & AI',
+      icon: Video,
+      desc: 'Synchronized player & AI',
+    },
+    {
+      id: 'lab',
+      label: 'Forensic Lab',
+      icon: ShieldAlert,
+      desc: 'Tamper audit & carving',
+      badge: stats?.integrity_status === 'COMPROMISED' ? 'ALERT' : null,
+      badgeVariant: stats?.integrity_status === 'COMPROMISED' ? 'danger' : 'neutral',
+    },
+    {
+      id: 'reports',
+      label: 'Custody & Reports',
+      icon: FileText,
+      desc: 'Chain of custody & Sec 65B',
+      badge: stats?.custody_blocks_count,
+    },
   ];
 
   return (
     <aside className="sidebar">
       <div className="sidebar-nav">
-        <div className="nav-section-title">Navigation</div>
+        <div className="nav-section-title">Forensic Workstation</div>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -39,27 +58,29 @@ export default function Sidebar({ activeTab, onTabChange, stats }) {
               key={item.id}
               className={`nav-item ${isActive ? 'active' : ''}`}
               onClick={() => onTabChange(item.id)}
+              role="button"
+              tabIndex={0}
             >
               <Icon size={18} />
-              <span>{item.label}</span>
-              {item.tag && (
-                <span
-                  style={{
-                    marginLeft: 'auto',
-                    fontSize: '0.68rem',
-                    fontWeight: 700,
-                    background: 'rgba(0, 229, 255, 0.15)',
-                    color: 'var(--cyan-primary)',
-                    padding: '2px 6px',
-                    borderRadius: 4,
-                    border: '1px solid rgba(0, 229, 255, 0.3)',
-                  }}
-                >
-                  {item.tag}
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                <span style={{ fontSize: '0.86rem', fontWeight: isActive ? 600 : 500 }}>
+                  {item.label}
                 </span>
-              )}
-              {item.badge !== undefined && item.badge !== null && item.badge > 0 && !item.tag && (
-                <span className="nav-badge">{item.badge}</span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                  {item.desc}
+                </span>
+              </div>
+              {item.badge !== undefined && item.badge !== null && (
+                <span
+                  className="nav-badge"
+                  style={
+                    item.badgeVariant === 'danger'
+                      ? { background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', fontWeight: 700 }
+                      : {}
+                  }
+                >
+                  {item.badge}
+                </span>
               )}
             </div>
           );
@@ -73,7 +94,7 @@ export default function Sidebar({ activeTab, onTabChange, stats }) {
             <span>SECURE FORENSIC MODE</span>
           </div>
           <div className="protocol-desc">
-            All evidence is read-only locked and verified with SHA-256 cryptographic hashes.
+            Write-blocked physical ingestion & dual SHA-256 + MD5 cryptographic validation active.
           </div>
         </div>
       </div>

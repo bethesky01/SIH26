@@ -1,16 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import DashboardView from './views/DashboardView';
 import EvidenceView from './views/EvidenceView';
-import VideoPlayerView from './views/VideoPlayerView';
-import TimelineView from './views/TimelineView';
-import IntegrityView from './views/IntegrityView';
-import LedgerView from './views/LedgerView';
-import RecoveryView from './views/RecoveryView';
-import ReportsView from './views/ReportsView';
-import AdaptersView from './views/AdaptersView';
-import UniversalScannerView from './views/UniversalScannerView';
+import VideoStudioView from './views/VideoStudioView';
+import ForensicLabView from './views/ForensicLabView';
+import ReportsCustodyView from './views/ReportsCustodyView';
 import { api } from './services/api';
 
 export default function App() {
@@ -25,7 +20,7 @@ export default function App() {
   const [isReloading, setIsReloading] = useState(false);
   const [globalError, setGlobalError] = useState(null);
 
-  const loadCaseData = async (caseId) => {
+  const loadCaseData = useCallback(async (caseId) => {
     try {
       const [caseObj, statsData, evList] = await Promise.all([
         api.getCase(caseId),
@@ -35,15 +30,15 @@ export default function App() {
       setActiveCase(caseObj);
       setStats(statsData);
       setEvidenceList(evList || []);
-      if (evList && evList.length > 0 && !selectedEvidenceId) {
-        setSelectedEvidenceId(evList[0].id);
+      if (evList && evList.length > 0) {
+        setSelectedEvidenceId((prev) => prev || evList[0].id);
       }
     } catch (err) {
       console.error('Failed to load case data:', err);
     }
-  };
+  }, []);
 
-  const handleReloadDemo = async () => {
+  const handleReloadDemo = useCallback(async () => {
     setIsReloading(true);
     setGlobalError(null);
     try {
@@ -60,9 +55,9 @@ export default function App() {
     } finally {
       setIsReloading(false);
     }
-  };
+  }, [loadCaseData]);
 
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     try {
       setGlobalError(null);
       const caseList = await api.getCases();
@@ -76,7 +71,7 @@ export default function App() {
     } catch (err) {
       console.warn('Initial load fallback:', err);
     }
-  };
+  }, [handleReloadDemo]);
 
   // Subscribe to demo mode changes
   useEffect(() => {
@@ -85,21 +80,21 @@ export default function App() {
     });
   }, []);
 
-  // Initial load: Fetch cases and dashboard stats
+  // Initial load
   useEffect(() => {
     loadInitialData();
-  }, []);
+  }, [loadInitialData]);
 
-  // When selectedCaseId changes, load case data and evidence
+  // When selectedCaseId changes, load case data
   useEffect(() => {
     if (selectedCaseId) {
       loadCaseData(selectedCaseId);
     }
-  }, [selectedCaseId]);
+  }, [selectedCaseId, loadCaseData]);
 
   const handleInspectEvidence = (evidenceId) => {
     setSelectedEvidenceId(evidenceId);
-    setActiveTab('player');
+    setActiveTab('video');
   };
 
   return (
@@ -123,7 +118,7 @@ export default function App() {
           stats={stats}
         />
 
-        {/* Demo Mode or Global Error Banner */}
+        {/* Demo Mode Notice Banner */}
         {isDemoMode && (
           <div
             className="alert-banner info"
@@ -140,10 +135,10 @@ export default function App() {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span className="status-pill info" style={{ fontSize: '0.72rem', fontWeight: 700 }}>
-                ⚡ DEMO READY
+                STANDALONE READY
               </span>
               <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                Investigation sample data loaded. Explore CCTV footage, AI tracking, tamper checks, and reports.
+                Forensic investigation demo pipeline active. All 5 modules are functional with simulated CCTV evidence.
               </span>
             </div>
             <button
@@ -177,10 +172,6 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'universal' && (
-            <UniversalScannerView onNavigate={setActiveTab} />
-          )}
-
           {activeTab === 'evidence' && (
             <EvidenceView
               evidenceList={evidenceList}
@@ -191,46 +182,20 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'player' && (
-            <VideoPlayerView
+          {activeTab === 'video' && (
+            <VideoStudioView
               evidenceList={evidenceList}
               selectedEvidenceId={selectedEvidenceId}
               onSelectEvidence={setSelectedEvidenceId}
-              onNavigate={setActiveTab}
             />
           )}
 
-          {activeTab === 'timeline' && (
-            <TimelineView
-              activeCase={activeCase}
-              onInspectEvidence={handleInspectEvidence}
-            />
-          )}
-
-          {activeTab === 'integrity' && (
-            <IntegrityView
-              evidenceList={evidenceList}
-              onRefresh={() => loadCaseData(selectedCaseId)}
-            />
-          )}
-
-          {activeTab === 'ledger' && (
-            <LedgerView activeCase={activeCase} />
-          )}
-
-          {activeTab === 'recovery' && (
-            <RecoveryView
-              evidenceList={evidenceList}
-              activeCase={activeCase}
-            />
+          {activeTab === 'lab' && (
+            <ForensicLabView />
           )}
 
           {activeTab === 'reports' && (
-            <ReportsView activeCase={activeCase} />
-          )}
-
-          {activeTab === 'adapters' && (
-            <AdaptersView activeCase={activeCase} />
+            <ReportsCustodyView activeCase={activeCase} />
           )}
         </main>
       </div>
